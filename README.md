@@ -20,6 +20,19 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 | Get-LocalAdministrator.ps1 | Enumerate local Administrators membership locally or through PowerShell remoting |
 | Get-InstalledSoftware.ps1 | Inventory 32-bit and 64-bit installed software without Win32_Product side effects |
 | Test-SmbShareAccess.ps1 | Measure UNC read access and perform an optional reversible write probe |
+| Get-ADUserLifecycleAudit.ps1 | Find inactive enabled users, old passwords, expired passwords, and non-expiring credentials |
+| Get-StaleADComputer.ps1 | Identify inactive Active Directory computer objects with OS and logon context |
+| Test-DomainControllerPorts.ps1 | Validate DNS, Kerberos, RPC, LDAP, SMB, LDAPS, and Global Catalog reachability |
+| Get-DhcpScopeUtilization.ps1 | Report scope capacity, leases, reservations, and utilization percentages |
+| Get-DnsZoneInventory.ps1 | Inventory DNS zones, update modes, replication scopes, and directory integration |
+| Get-ScheduledTaskAudit.ps1 | Review task identity, elevation, actions, results, missed runs, and schedules |
+| Get-WindowsUpdateHistory.ps1 | Read Windows Update installation history without scraping Event Viewer |
+| Get-FirewallExposure.ps1 | Flatten effective firewall rules with ports, addresses, profiles, and programs |
+| Get-BitLockerInventory.ps1 | Report encryption, protection, lock state, methods, and key-protector presence |
+| Get-SmbShareInventory.ps1 | Inventory SMB configuration, encryption, caching, and share permissions |
+| Get-UserProfileAudit.ps1 | Find large, old, loaded, and inactive local profiles |
+| Test-TimeSynchronization.ps1 | Measure Windows time offsets against one or more systems |
+| New-WindowsOpsSnapshot.ps1 | Run a coordinated set of collectors and export a timestamped JSON evidence bundle |
 
 ~~~powershell
 .\Get-ServerHealth.ps1
@@ -38,7 +51,22 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 .\Get-LocalAdministrator.ps1 -ComputerName server01,server02
 .\Get-InstalledSoftware.ps1 -Name VMware
 .\Test-SmbShareAccess.ps1 -Path \\fileserver\department
+.\Get-ADUserLifecycleAudit.ps1 -InactiveDays 90
+.\Get-StaleADComputer.ps1 -InactiveDays 120
+.\Test-DomainControllerPorts.ps1
+.\Get-DhcpScopeUtilization.ps1 -ComputerName dhcp01
+.\Get-DnsZoneInventory.ps1 -ComputerName dns01
+.\Get-ScheduledTaskAudit.ps1
+.\Get-WindowsUpdateHistory.ps1 -Newest 50
+.\Get-FirewallExposure.ps1 -EnabledOnly
+.\Get-BitLockerInventory.ps1
+.\Get-SmbShareInventory.ps1
+.\Get-UserProfileAudit.ps1 -OlderThanDays 180
+.\Test-TimeSynchronization.ps1 -ComputerName dc01,dc02
+.\New-WindowsOpsSnapshot.ps1 -OutputDirectory C:\Admin\Snapshots\Today
 ~~~
+
+Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running domain, DHCP, DNS, BitLocker, firewall, or remote-management collectors.
 
 ## Quality gates
 
