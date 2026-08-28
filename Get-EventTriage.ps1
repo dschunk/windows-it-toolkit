@@ -10,7 +10,7 @@ $events = foreach ($log in $LogName) {
     try {
         Get-WinEvent -FilterHashtable @{LogName=$log;Level=1,2,3;StartTime=$start} -MaxEvents $MaxEvents -ErrorAction Stop
     } catch {
-        Write-Warning "Unable to query $log: $($_.Exception.Message)"
+        Write-Warning "Unable to query ${log}: $($_.Exception.Message)"
     }
 }
 
