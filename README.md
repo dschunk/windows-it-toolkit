@@ -11,6 +11,10 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 | Get-EventTriage.ps1 | Group recent warnings and errors into an actionable event summary |
 | Get-SystemInventory.ps1 | Collect portable system, network, hotfix, and hardware inventory |
 | Test-DnsResolution.ps1 | Compare DNS resolution, answers, failures, and response times |
+| Test-TlsEndpoint.ps1 | Inspect TLS protocol, certificate identity, expiration, and response time |
+| Get-PendingReboot.ps1 | Explain which Windows subsystem is requesting a restart |
+| Get-ListeningPortReport.ps1 | Map listening TCP/UDP ports to processes and executable paths |
+| Get-NtfsPermissionAudit.ps1 | Audit explicit and inherited NTFS access rules beneath a path |
 
 ~~~powershell
 .\Get-ServerHealth.ps1
@@ -20,7 +24,17 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 .\Get-EventTriage.ps1 -Hours 12
 .\Get-SystemInventory.ps1 -OutputPath .\inventory.json
 .\Test-DnsResolution.ps1 -Name example.com -Server 1.1.1.1,8.8.8.8
+.\Test-TlsEndpoint.ps1 -HostName example.com
+.\Get-PendingReboot.ps1
+.\Get-ListeningPortReport.ps1 -Protocol TCP
+.\Get-NtfsPermissionAudit.ps1 -Path D:\Shares -Depth 2
 ~~~
+
+## Quality gates
+
+[![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
+
+Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules.
 
 The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
 
