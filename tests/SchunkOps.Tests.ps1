@@ -1,7 +1,9 @@
-$modulePath = Join-Path $PSScriptRoot '..\module\SchunkOps\SchunkOps.psd1'
-$manifest = Test-ModuleManifest -Path $modulePath
-
 Describe 'SchunkOps module' {
+    BeforeAll {
+        $modulePath = Join-Path $PSScriptRoot '..\module\SchunkOps\SchunkOps.psd1'
+        $manifest = Test-ModuleManifest -Path $modulePath
+    }
+
     It 'has valid manifest metadata' {
         $manifest.Name | Should -Be 'SchunkOps'
         $manifest.Version.ToString() | Should -Be '1.0.0'
