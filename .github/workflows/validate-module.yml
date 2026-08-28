@@ -1,0 +1,55 @@
+name: Validate SchunkOps
+
+on:
+  push:
+    paths:
+      - 'module/**'
+      - 'tests/**'
+      - '.github/workflows/validate-module.yml'
+  pull_request:
+    paths:
+      - 'module/**'
+      - 'tests/**'
+      - '.github/workflows/validate-module.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+
+      - name: Validate module manifest and import
+        shell: pwsh
+        run: |
+          $manifestPath = Join-Path $PWD 'module\SchunkOps\SchunkOps.psd1'
+          $manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
+          Import-Module $manifestPath -Force -ErrorAction Stop
+
+          $actual = @(Get-Command -Module SchunkOps -CommandType Function).Name | Sort-Object
+          $expected = @($manifest.ExportedFunctions.Keys) | Sort-Object
+          $difference = Compare-Object -ReferenceObject $expected -DifferenceObject $actual
+          if ($difference) {
+            $difference | Format-Table -AutoSize
+            throw 'Exported commands do not match the module manifest.'
+          }
+
+      - name: Run Pester tests
+        shell: pwsh
+        run: Invoke-Pester -Path '.\tests\SchunkOps.Tests.ps1' -CI
+
+      - name: Run PSScriptAnalyzer error rules
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path '.\module\SchunkOps' -Recurse -Severity Error
+          $results | Format-Table -AutoSize
+          if ($results) { exit 1 }

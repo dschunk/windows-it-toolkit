@@ -3,8 +3,61 @@
 [![Author](https://img.shields.io/badge/Author-David%20Schunk-0B1F3A?style=for-the-badge)](https://github.com/dschunk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-C9A227?style=for-the-badge)](LICENSE)
 [![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
+[![Validate SchunkOps](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml)
 
 Practical PowerShell tools for everyday infrastructure work: server health, network diagnostics, certificate inspection, and storage triage.
+
+## SchunkOps PowerShell module
+
+**SchunkOps** is the curated, installable module edition of this toolkit. Its
+David-branded command names make the original project easy to discover when
+commands appear in consoles, runbooks, screenshots, and shared automation.
+
+The first Gallery release is prepared and awaiting maintainer signing secrets.
+Until then, clone the repository and import the module directly:
+
+~~~powershell
+git clone https://github.com/dschunk/windows-it-toolkit.git
+Import-Module .\windows-it-toolkit\module\SchunkOps\SchunkOps.psd1
+Get-Command -Module SchunkOps
+~~~
+
+After `v1.0.0` is published to the PowerShell Gallery:
+
+~~~powershell
+Install-Module SchunkOps -Scope CurrentUser
+Import-Module SchunkOps
+
+Get-SchunkServerHealth
+Test-SchunkNetworkPath -ComputerName server01 -Port 53,443,3389
+Test-SchunkTlsEndpoint -HostName example.com
+Get-SchunkPendingReboot
+~~~
+
+| SchunkOps command | Operational use |
+|---|---|
+| `Get-SchunkServerHealth` | Uptime, CPU, memory, disks, services, and recent system errors |
+| `Test-SchunkNetworkPath` | DNS, ICMP, TCP reachability, and latency |
+| `Test-SchunkTlsEndpoint` | TLS protocol, certificate identity, expiry, and response time |
+| `Get-SchunkPendingReboot` | Evidence from five Windows reboot indicators |
+| `Get-SchunkListeningPort` | TCP/UDP listeners mapped to owning processes |
+| `Get-SchunkEventTriage` | Grouped Windows warnings and errors |
+| `Get-SchunkInstalledSoftware` | Side-effect-free 32/64-bit software inventory |
+| `Get-SchunkWindowsUpdateHistory` | Update installation and removal history |
+| `Get-SchunkScheduledTaskAudit` | Task identity, elevation, actions, and results |
+| `Get-SchunkBitLockerInventory` | Encryption, protection, and recovery-key presence |
+
+Every command includes discoverable help:
+
+~~~powershell
+Get-Help about_SchunkOps
+Get-Help Get-SchunkServerHealth -Full
+~~~
+
+Release instructions and secret requirements are documented in
+[docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+## Standalone field tools
 
 | Script | Purpose |
 |---|---|
@@ -88,7 +141,9 @@ Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running
 
 [![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
 
-Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules.
+Every push and pull request is parsed on a Windows runner and checked with
+PSScriptAnalyzer error rules. SchunkOps also validates its manifest, imports
+the module, compares declared and actual exports, and runs Pester tests.
 
 ## Authorship and credit
 
@@ -98,7 +153,9 @@ The MIT License permits broad personal and commercial use while requiring preser
 
 > Based on the Windows IT Toolkit by David Schunk — https://github.com/dschunk/windows-it-toolkit
 
-The toolkit contains no usage telemetry or phone-home tracking. Adoption is measured transparently through GitHub stars, forks, clones, issues, contributors, releases, and—when packaged—PowerShell Gallery downloads.
+The toolkit contains no usage telemetry or phone-home tracking. Adoption is
+measured transparently through GitHub stars, forks, clones, issues,
+contributors, releases, and PowerShell Gallery downloads.
 
 The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
 

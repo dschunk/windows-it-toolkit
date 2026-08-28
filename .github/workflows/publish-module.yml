@@ -1,0 +1,85 @@
+name: Publish SchunkOps
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    environment: powershell-gallery
+    env:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
+      CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install release dependencies
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+
+      - name: Verify tag and module version
+        shell: pwsh
+        run: |
+          $manifestPath = Join-Path $PWD 'module\SchunkOps\SchunkOps.psd1'
+          $manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
+          $tagVersion = $env:GITHUB_REF_NAME.TrimStart('v')
+          if ($tagVersion -ne $manifest.Version.ToString()) {
+            throw "Tag version $tagVersion does not match manifest version $($manifest.Version)."
+          }
+
+      - name: Run release quality gates
+        shell: pwsh
+        run: |
+          Invoke-Pester -Path '.\tests\SchunkOps.Tests.ps1' -CI
+          $analysis = Invoke-ScriptAnalyzer -Path '.\module\SchunkOps' -Recurse -Severity Error
+          if ($analysis) {
+            $analysis | Format-Table -AutoSize
+            throw 'PSScriptAnalyzer found release-blocking errors.'
+          }
+
+      - name: Authenticode sign module files
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_BASE64)) {
+            throw 'CODESIGN_PFX_BASE64 is not configured.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_PASSWORD)) {
+            throw 'CODESIGN_PFX_PASSWORD is not configured.'
+          }
+
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'schunkops-codesign.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
+          $password = ConvertTo-SecureString $env:CODESIGN_PFX_PASSWORD -AsPlainText -Force
+          $certificate = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $pfxPath,
+            $password,
+            [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
+          )
+
+          $moduleFiles = Get-ChildItem '.\module\SchunkOps' -Recurse -File |
+            Where-Object Extension -in '.ps1', '.psm1', '.psd1'
+
+          foreach ($file in $moduleFiles) {
+            $signature = Set-AuthenticodeSignature -FilePath $file.FullName -Certificate $certificate -HashAlgorithm SHA256 -TimestampServer 'http://timestamp.digicert.com'
+            if ($signature.Status -ne 'Valid') {
+              throw "Signing failed for $($file.FullName): $($signature.StatusMessage)"
+            }
+          }
+
+      - name: Publish to PowerShell Gallery
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
+            throw 'PSGALLERY_API_KEY is not configured.'
+          }
+          Publish-Module -Path '.\module\SchunkOps' -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
