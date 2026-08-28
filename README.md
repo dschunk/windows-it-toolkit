@@ -15,6 +15,11 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 | Get-PendingReboot.ps1 | Explain which Windows subsystem is requesting a restart |
 | Get-ListeningPortReport.ps1 | Map listening TCP/UDP ports to processes and executable paths |
 | Get-NtfsPermissionAudit.ps1 | Audit explicit and inherited NTFS access rules beneath a path |
+| Test-ActiveDirectoryHealth.ps1 | Check domain controllers, LDAP reachability, sites, and replication freshness |
+| Get-GroupPolicyInventory.ps1 | Inventory GPO ownership, status, versions, WMI filters, and modification dates |
+| Get-LocalAdministrator.ps1 | Enumerate local Administrators membership locally or through PowerShell remoting |
+| Get-InstalledSoftware.ps1 | Inventory 32-bit and 64-bit installed software without Win32_Product side effects |
+| Test-SmbShareAccess.ps1 | Measure UNC read access and perform an optional reversible write probe |
 
 ~~~powershell
 .\Get-ServerHealth.ps1
@@ -28,6 +33,11 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 .\Get-PendingReboot.ps1
 .\Get-ListeningPortReport.ps1 -Protocol TCP
 .\Get-NtfsPermissionAudit.ps1 -Path D:\Shares -Depth 2
+.\Test-ActiveDirectoryHealth.ps1
+.\Get-GroupPolicyInventory.ps1
+.\Get-LocalAdministrator.ps1 -ComputerName server01,server02
+.\Get-InstalledSoftware.ps1 -Name VMware
+.\Test-SmbShareAccess.ps1 -Path \\fileserver\department
 ~~~
 
 ## Quality gates
