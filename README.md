@@ -1,4 +1,8 @@
-# Windows IT Toolkit
+# Windows IT Toolkit — by David Schunk
+
+[![Author](https://img.shields.io/badge/Author-David%20Schunk-0B1F3A?style=for-the-badge)](https://github.com/dschunk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-C9A227?style=for-the-badge)](LICENSE)
+[![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
 
 Practical PowerShell tools for everyday infrastructure work: server health, network diagnostics, certificate inspection, and storage triage.
 
@@ -33,6 +37,12 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 | Get-UserProfileAudit.ps1 | Find large, old, loaded, and inactive local profiles |
 | Test-TimeSynchronization.ps1 | Measure Windows time offsets against one or more systems |
 | New-WindowsOpsSnapshot.ps1 | Run a coordinated set of collectors and export a timestamped JSON evidence bundle |
+| Get-IISSiteInventory.ps1 | Inventory IIS sites, bindings, application pools, paths, runtime state, and logging |
+| Get-HyperVInventory.ps1 | Report Hyper-V VM state, resources, checkpoints, disks, networking, and lifecycle actions |
+| Get-PrintServerInventory.ps1 | Inventory printers, drivers, ports, sharing, publication, queues, and configuration |
+| Test-RdpReadiness.ps1 | Validate RDP enablement, NLA, service state, firewall rules, port, and listener |
+| Get-EventLogConfiguration.ps1 | Review event-log enablement, retention mode, capacity, records, and file locations |
+| Get-EnvironmentPathAudit.ps1 | Detect missing, duplicate, and risky machine and user PATH entries |
 
 ~~~powershell
 .\Get-ServerHealth.ps1
@@ -64,6 +74,12 @@ Practical PowerShell tools for everyday infrastructure work: server health, netw
 .\Get-UserProfileAudit.ps1 -OlderThanDays 180
 .\Test-TimeSynchronization.ps1 -ComputerName dc01,dc02
 .\New-WindowsOpsSnapshot.ps1 -OutputDirectory C:\Admin\Snapshots\Today
+.\Get-IISSiteInventory.ps1
+.\Get-HyperVInventory.ps1 -ComputerName hyperv01
+.\Get-PrintServerInventory.ps1 -ComputerName print01
+.\Test-RdpReadiness.ps1
+.\Get-EventLogConfiguration.ps1 -LogName Application,Security,System
+.\Get-EnvironmentPathAudit.ps1
 ~~~
 
 Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running domain, DHCP, DNS, BitLocker, firewall, or remote-management collectors.
@@ -73,6 +89,16 @@ Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running
 [![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
 
 Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules.
+
+## Authorship and credit
+
+Created and maintained by **David Maksim Schunk**. See [AUTHORS.md](AUTHORS.md), [CITATION.cff](CITATION.cff), and the [attribution guide](docs/ATTRIBUTION.md).
+
+The MIT License permits broad personal and commercial use while requiring preservation of the copyright and license notice in copies or substantial portions. Preferred public credit:
+
+> Based on the Windows IT Toolkit by David Schunk — https://github.com/dschunk/windows-it-toolkit
+
+The toolkit contains no usage telemetry or phone-home tracking. Adoption is measured transparently through GitHub stars, forks, clones, issues, contributors, releases, and—when packaged—PowerShell Gallery downloads.
 
 The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
 
