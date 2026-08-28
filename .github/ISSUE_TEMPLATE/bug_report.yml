@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible problem using sanitized information
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you for helping improve the Windows IT Toolkit. Never include credentials, private addresses, recovery keys, or proprietary data."
+  - type: input
+    id: script
+    attributes:
+      label: Script
+      placeholder: Get-ServerHealth.ps1
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized error
+    validations:
+      required: true
+  - type: input
+    id: powershell
+    attributes:
+      label: PowerShell version
+      placeholder: 5.1 or 7.5
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows Server 2022
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Sanitization
+      options:
+        - label: I removed credentials, tokens, internal addresses, personal data, and proprietary information.
+          required: true
