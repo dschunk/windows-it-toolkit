@@ -9,14 +9,18 @@
     PowerShellVersion = '5.1'
 
     FunctionsToExport = @(
+        'Compare-SchunkIncidentBundle'
         'Get-SchunkBitLockerInventory'
         'Get-SchunkEventTriage'
         'Get-SchunkInstalledSoftware'
         'Get-SchunkListeningPort'
+        'Get-SchunkLogonFailure'
         'Get-SchunkPendingReboot'
         'Get-SchunkScheduledTaskAudit'
         'Get-SchunkServerHealth'
+        'Get-SchunkServiceFailure'
         'Get-SchunkWindowsUpdateHistory'
+        'New-SchunkIncidentBundle'
         'Test-SchunkNetworkPath'
         'Test-SchunkTlsEndpoint'
     )
@@ -40,7 +44,7 @@
             LicenseUri = 'https://github.com/dschunk/windows-it-toolkit/blob/main/LICENSE'
             ProjectUri = 'https://github.com/dschunk/windows-it-toolkit'
             IconUri = 'https://avatars.githubusercontent.com/u/18497813'
-            ReleaseNotes = 'First public SchunkOps release with ten Windows operations commands.'
+            ReleaseNotes = 'First public SchunkOps release with fourteen Windows operations and incident-response commands.'
         }
     }
 }

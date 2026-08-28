@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+  <title id="title">SchunkOps by David Schunk</title>
+  <desc id="desc">Windows operations, incident response, diagnostics, and evidence.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071426"/>
+      <stop offset="0.58" stop-color="#0B1F3A"/>
+      <stop offset="1" stop-color="#102E50"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A227"/>
+      <stop offset="1" stop-color="#F2D675"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1280" height="360" rx="24" fill="url(#bg)"/>
+  <path d="M0 305 C250 260 420 375 670 315 S1040 235 1280 292 V360 H0Z" fill="#0E2948" opacity=".8"/>
+  <path d="M0 318 C270 276 430 386 690 325 S1030 255 1280 306" fill="none" stroke="#1C4168" stroke-width="2"/>
+  <circle cx="1112" cy="80" r="155" fill="#0D335B" opacity=".34"/>
+  <circle cx="1112" cy="80" r="112" fill="none" stroke="#1B4C79" stroke-width="2" opacity=".55"/>
+  <g transform="translate(72 62)">
+    <rect x="0" y="0" width="86" height="86" rx="18" fill="#06101F" stroke="url(#gold)" stroke-width="3"/>
+    <path d="M24 26h38M24 43h27M24 60h38" stroke="#F2D675" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="67" cy="43" r="5" fill="#52D69A" filter="url(#glow)"/>
+  </g>
+  <text x="184" y="112" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="66" font-weight="700" letter-spacing="1">SchunkOps</text>
+  <text x="186" y="154" fill="#F2D675" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="4">BY DAVID SCHUNK</text>
+  <text x="72" y="220" fill="#DCE8F5" font-family="Segoe UI, Arial, sans-serif" font-size="28">Windows operations built for the next engineer.</text>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600">
+    <g transform="translate(72 258)"><rect width="205" height="44" rx="22" fill="#0B1A2D" stroke="#31577C"/><circle cx="24" cy="22" r="6" fill="#52D69A"/><text x="42" y="28" fill="#DCE8F5">INCIDENT RESPONSE</text></g>
+    <g transform="translate(294 258)"><rect width="160" height="44" rx="22" fill="#0B1A2D" stroke="#31577C"/><circle cx="24" cy="22" r="6" fill="#5DADE2"/><text x="42" y="28" fill="#DCE8F5">DIAGNOSTICS</text></g>
+    <g transform="translate(471 258)"><rect width="137" height="44" rx="22" fill="#0B1A2D" stroke="#31577C"/><circle cx="24" cy="22" r="6" fill="#F2D675"/><text x="42" y="28" fill="#DCE8F5">EVIDENCE</text></g>
+  </g>
+  <g transform="translate(865 90)" font-family="Consolas, monospace" font-size="17">
+    <rect width="338" height="190" rx="14" fill="#050D18" stroke="#2A5279" stroke-width="2"/>
+    <rect width="338" height="34" rx="14" fill="#102B48"/>
+    <circle cx="20" cy="17" r="5" fill="#E36D6D"/><circle cx="39" cy="17" r="5" fill="#F2D675"/><circle cx="58" cy="17" r="5" fill="#52D69A"/>
+    <text x="18" y="72" fill="#5DADE2">PS&gt;</text><text x="58" y="72" fill="#FFFFFF">New-SchunkIncidentBundle</text>
+    <text x="18" y="107" fill="#8097AE">Collectors</text><text x="180" y="107" fill="#FFFFFF">10</text>
+    <text x="18" y="137" fill="#8097AE">Integrity</text><text x="180" y="137" fill="#F2D675">SHA-256</text>
+    <text x="18" y="167" fill="#8097AE">Status</text><text x="180" y="167" fill="#52D69A">READY</text>
+  </g>
+</svg>

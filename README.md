@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/schunkops-banner.svg" alt="SchunkOps by David Schunk — Windows operations built for the next engineer" width="100%" />
+</p>
+
 # Windows IT Toolkit — by David Schunk
 
 [![Author](https://img.shields.io/badge/Author-David%20Schunk-0B1F3A?style=for-the-badge)](https://github.com/dschunk)
@@ -6,6 +10,30 @@
 [![Validate SchunkOps](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml)
 
 Practical PowerShell tools for everyday infrastructure work: server health, network diagnostics, certificate inspection, and storage triage.
+
+## Start here: the 15-minute incident triage
+
+When a Windows server is failing and the handoff needs evidence instead of
+screenshots, SchunkOps can collect a structured bundle in one command:
+
+~~~powershell
+New-SchunkIncidentBundle -OutputPath C:\IR\INC-0042 -Profile Full
+~~~
+
+The bundle contains separate JSON evidence files, per-collector status,
+record counts, timestamps, and SHA-256 integrity hashes. Capture the system
+again after remediation and compare what changed:
+
+~~~powershell
+$comparison = @{
+    ReferencePath = 'C:\IR\INC-0042'
+    DifferencePath = 'C:\IR\INC-0042-After'
+}
+Compare-SchunkIncidentBundle @comparison
+~~~
+
+Follow the complete, safety-conscious
+[15-minute Windows incident triage](docs/INCIDENT-RESPONSE.md).
 
 ## SchunkOps PowerShell module
 
@@ -36,6 +64,10 @@ Get-SchunkPendingReboot
 
 | SchunkOps command | Operational use |
 |---|---|
+| **New-SchunkIncidentBundle** | Coordinated JSON evidence collection with SHA-256 integrity hashes |
+| **Compare-SchunkIncidentBundle** | Compare two bundle manifests and identify changed evidence sets |
+| **Get-SchunkLogonFailure** | Group failed authentications by identity, source, event, and reason |
+| **Get-SchunkServiceFailure** | Find stopped automatic services and recent Service Control Manager failures |
 | `Get-SchunkServerHealth` | Uptime, CPU, memory, disks, services, and recent system errors |
 | `Test-SchunkNetworkPath` | DNS, ICMP, TCP reachability, and latency |
 | `Test-SchunkTlsEndpoint` | TLS protocol, certificate identity, expiry, and response time |
@@ -160,3 +192,9 @@ contributors, releases, and PowerShell Gallery downloads.
 The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
 
 Issues and pull requests are welcome. Never include real credentials, tokens, private hostnames, or proprietary data in examples.
+
+## Help build it
+
+The [public roadmap](ROADMAP.md) includes fleet operations, baselines, reporting,
+redaction, schemas, tests, and good first contributions. Pull requests use a
+safety and quality checklist so new tools remain predictable under pressure.

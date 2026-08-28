@@ -7,7 +7,9 @@ SHORT DESCRIPTION
 LONG DESCRIPTION
     SchunkOps is the installable PowerShell module from the Windows IT Toolkit.
     It provides object-first commands for common server health, network, TLS,
-    event, software, update, task, port, reboot, and BitLocker investigations.
+    event, software, update, task, port, reboot, BitLocker, authentication, and
+    service investigations. It can also create integrity-hashed incident bundles
+    and compare evidence captures.
 
     The commands use safe, read-only defaults and return structured objects so
     they can be filtered, exported, scheduled, and integrated into operations
@@ -18,6 +20,7 @@ GETTING STARTED
     Import-Module SchunkOps
     Get-Command -Module SchunkOps
     Get-Help Get-SchunkServerHealth -Full
+    Get-Help New-SchunkIncidentBundle -Full
 
 AUTHOR
     David Maksim Schunk
