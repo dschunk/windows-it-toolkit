@@ -4,6 +4,8 @@
 
 # Windows IT Toolkit — by David Schunk
 
+> **Personal project notice:** This repository is independently maintained in a personal/open-source capacity and is not affiliated with, sponsored by, or endorsed by any current or former employer. It is intended to contain only generic, reusable administration tooling and examples. Do not contribute employer confidential or proprietary information, non-public internal configurations, customer data, credentials, employer source code, or employer work product.
+
 [![Author](https://img.shields.io/badge/Author-David%20Schunk-0B1F3A?style=for-the-badge)](https://github.com/dschunk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-C9A227?style=for-the-badge)](LICENSE)
 [![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
@@ -191,7 +193,7 @@ contributors, releases, and PowerShell Gallery downloads.
 
 The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
 
-Issues and pull requests are welcome. Never include real credentials, tokens, private hostnames, or proprietary data in examples.
+Issues and pull requests are welcome. Never include real credentials, tokens, private hostnames, proprietary data, or employer confidential/work-product material in examples.
 
 ## Help build it
 
