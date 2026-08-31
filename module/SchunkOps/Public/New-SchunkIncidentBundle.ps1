@@ -6,9 +6,9 @@ function New-SchunkIncidentBundle {
     .DESCRIPTION
     Runs a coordinated set of SchunkOps collectors, writes each result to its
     own JSON file, and creates a manifest containing collection status and
-    SHA-256 hashes. Standard mode collects health, reboot, ports, events, and
-    service failures. Full mode also includes software, updates, scheduled
-    tasks, failed logons, and BitLocker state.
+    SHA-256 hashes. Standard mode collects endpoint triage, server health,
+    reboot state, ports, events, and service failures. Full mode also includes
+    software, updates, scheduled tasks, failed logons, and BitLocker state.
 
     The command does not upload data or contact an external service.
 
@@ -57,6 +57,10 @@ function New-SchunkIncidentBundle {
 
     $collectors = @(
         @{
+            Name = 'endpoint-triage'
+            Action = { Get-SchunkEndpointTriage -EventLookbackHours $EventLookbackHours }
+        }
+        @{
             Name = 'server-health'
             Action = { Get-SchunkServerHealth -EventLookbackHours $EventLookbackHours }
         }
@@ -80,6 +84,14 @@ function New-SchunkIncidentBundle {
 
     if ($Profile -eq 'Full') {
         $collectors += @(
+            @{
+                Name = 'domain-trust'
+                Action = { Get-SchunkDomainTrustStatus }
+            }
+            @{
+                Name = 'local-administrators'
+                Action = { Get-SchunkLocalAdministrator }
+            }
             @{
                 Name = 'installed-software'
                 Action = { Get-SchunkInstalledSoftware }
@@ -137,7 +149,7 @@ function New-SchunkIncidentBundle {
     }
 
     $manifest = [pscustomobject]@{
-        SchemaVersion = '1.0'
+        SchemaVersion = '1.1'
         BundleId = $bundleId
         ComputerName = $computerName
         CollectedAtUtc = $collectedAtUtc
