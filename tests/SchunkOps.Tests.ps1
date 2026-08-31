@@ -6,7 +6,7 @@ Describe 'SchunkOps module' {
 
     It 'has valid manifest metadata' {
         $manifest.Name | Should -Be 'SchunkOps'
-        $manifest.Version.ToString() | Should -Be '1.0.0'
+        $manifest.Version.ToString() | Should -Be '1.1.0'
         $manifest.Author | Should -Be 'David Maksim Schunk'
     }
 
@@ -20,7 +20,7 @@ Describe 'SchunkOps module' {
         $expected = @($manifest.ExportedFunctions.Keys) | Sort-Object
 
         Compare-Object -ReferenceObject $expected -DifferenceObject $actual | Should -BeNullOrEmpty
-        $actual.Count | Should -Be 14
+        $actual.Count | Should -Be 20
     }
 
     It 'provides synopsis help and David Schunk attribution for every public function' {
@@ -40,6 +40,11 @@ Describe 'SchunkOps module' {
         New-SchunkIncidentBundle -OutputPath $target -WhatIf
 
         Test-Path -LiteralPath $target | Should -BeFalse
+    }
+
+    It 'rejects an invalid disk pressure threshold relationship' {
+        Import-Module $modulePath -Force
+        { Get-SchunkDiskPressure -WarningFreePercent 5 -CriticalFreePercent 10 } | Should -Throw
     }
 
     It 'identifies changed, unchanged, added, and removed collectors' {
