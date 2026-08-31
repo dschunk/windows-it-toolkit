@@ -56,7 +56,7 @@ function Get-SchunkLocalAdministrator {
                 & $collector
             }
             catch {
-                Write-Error "Unable to enumerate local administrators on $computer: $($_.Exception.GetBaseException().Message)"
+                Write-Error "Unable to enumerate local administrators on ${computer}: $($_.Exception.GetBaseException().Message)"
             }
             continue
         }
@@ -65,7 +65,7 @@ function Get-SchunkLocalAdministrator {
             Invoke-Command -ComputerName $computer -ScriptBlock $collector -ErrorAction Stop
         }
         catch {
-            Write-Error "Unable to enumerate local administrators on $computer: $($_.Exception.GetBaseException().Message)"
+            Write-Error "Unable to enumerate local administrators on ${computer}: $($_.Exception.GetBaseException().Message)"
         }
     }
 }
