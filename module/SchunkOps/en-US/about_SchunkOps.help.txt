@@ -2,25 +2,33 @@ TOPIC
     about_SchunkOps
 
 SHORT DESCRIPTION
-    Practical Windows infrastructure diagnostics by David Schunk.
+    Practical Windows operations, help desk triage, and infrastructure diagnostics by David Schunk.
 
 LONG DESCRIPTION
     SchunkOps is the installable PowerShell module from the Windows IT Toolkit.
-    It provides object-first commands for common server health, network, TLS,
-    event, software, update, task, port, reboot, BitLocker, authentication, and
-    service investigations. It can also create integrity-hashed incident bundles
-    and compare evidence captures.
+    Version 1.1 provides twenty object-first commands for endpoint triage, server
+    health, DNS and network diagnostics, domain trust, Active Directory replication,
+    local administrator inventory, TLS, events, software, updates, scheduled tasks,
+    listening ports, pending reboots, BitLocker, authentication, and service failures.
 
-    The commands use safe, read-only defaults and return structured objects so
-    they can be filtered, exported, scheduled, and integrated into operations
-    workflows.
+    SchunkOps can also create integrity-hashed incident bundles and compare evidence
+    captures before and after remediation.
+
+    The commands use safe, read-only defaults and return structured objects so they
+    can be filtered, exported, scheduled, attached to tickets, and integrated into
+    operations workflows.
 
 GETTING STARTED
     Install-Module SchunkOps -Scope CurrentUser
     Import-Module SchunkOps
     Get-Command -Module SchunkOps
-    Get-Help Get-SchunkServerHealth -Full
+    Get-Help Get-SchunkEndpointTriage -Full
+    Get-Help Get-SchunkADReplicationHealth -Full
     Get-Help New-SchunkIncidentBundle -Full
+
+FIELD GUIDES
+    Help desk: docs/HELPDESK.md
+    Incident response: docs/INCIDENT-RESPONSE.md
 
 AUTHOR
     David Maksim Schunk
