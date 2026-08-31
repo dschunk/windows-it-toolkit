@@ -6,10 +6,15 @@ foreach ($function in $publicFunctions) {
 
 Export-ModuleMember -Function @(
     'Compare-SchunkIncidentBundle'
+    'Get-SchunkADReplicationHealth'
     'Get-SchunkBitLockerInventory'
+    'Get-SchunkDiskPressure'
+    'Get-SchunkDomainTrustStatus'
+    'Get-SchunkEndpointTriage'
     'Get-SchunkEventTriage'
     'Get-SchunkInstalledSoftware'
     'Get-SchunkListeningPort'
+    'Get-SchunkLocalAdministrator'
     'Get-SchunkLogonFailure'
     'Get-SchunkPendingReboot'
     'Get-SchunkScheduledTaskAudit'
@@ -17,6 +22,7 @@ Export-ModuleMember -Function @(
     'Get-SchunkServiceFailure'
     'Get-SchunkWindowsUpdateHistory'
     'New-SchunkIncidentBundle'
+    'Test-SchunkDnsClient'
     'Test-SchunkNetworkPath'
     'Test-SchunkTlsEndpoint'
 )
