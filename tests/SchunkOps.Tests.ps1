@@ -6,7 +6,7 @@ Describe 'SchunkOps module' {
 
     It 'has valid manifest metadata' {
         $manifest.Name | Should -Be 'SchunkOps'
-        $manifest.Version.ToString() | Should -Be '1.1.0'
+        $manifest.Version.ToString() | Should -Be '1.2.0'
         $manifest.Author | Should -Be 'David Maksim Schunk'
     }
 
@@ -20,7 +20,7 @@ Describe 'SchunkOps module' {
         $expected = @($manifest.ExportedFunctions.Keys) | Sort-Object
 
         Compare-Object -ReferenceObject $expected -DifferenceObject $actual | Should -BeNullOrEmpty
-        $actual.Count | Should -Be 20
+        $actual.Count | Should -Be 28
     }
 
     It 'provides synopsis help and David Schunk attribution for every public function' {
@@ -45,6 +45,52 @@ Describe 'SchunkOps module' {
     It 'rejects an invalid disk pressure threshold relationship' {
         Import-Module $modulePath -Force
         { Get-SchunkDiskPressure -WarningFreePercent 5 -CriticalFreePercent 10 } | Should -Throw
+    }
+
+    It 'keeps senior diagnostics free of state-changing administration commands' {
+        $publicPath = Join-Path $PSScriptRoot '..\module\SchunkOps\Public'
+        $seniorFiles = @(
+            'Get-SchunkAccountLockoutTrace.ps1'
+            'Get-SchunkKerberosSpnAudit.ps1'
+            'Get-SchunkGpoChangeAudit.ps1'
+            'Get-SchunkDhcpDnsConsistency.ps1'
+            'Test-SchunkCertificateChain.ps1'
+            'Get-SchunkClusterHealth.ps1'
+            'Get-SchunkFleetHealth.ps1'
+            'Get-SchunkVSphereInventory.ps1'
+        )
+        $blockedCommands = @(
+            'Unlock-ADAccount'
+            'Set-ADAccountPassword'
+            'Set-ADObject'
+            'Set-ADUser'
+            'Set-ADComputer'
+            'Set-GPRegistryValue'
+            'New-GPO'
+            'Remove-GPO'
+            'Set-DhcpServerv4OptionValue'
+            'Remove-DnsServerResourceRecord'
+            'Add-DnsServerResourceRecordA'
+            'Move-ClusterGroup'
+            'Start-ClusterGroup'
+            'Stop-ClusterGroup'
+            'Set-ClusterQuorum'
+            'Set-VM'
+            'Move-VM'
+            'Remove-Snapshot'
+        )
+
+        foreach ($fileName in $seniorFiles) {
+            $path = Join-Path $publicPath $fileName
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors)
+            $errors | Should -BeNullOrEmpty -Because $fileName
+            $commands = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true) |
+                ForEach-Object { $_.GetCommandName() } |
+                Where-Object { $_ })
+            @($commands | Where-Object { $_ -in $blockedCommands }) | Should -BeNullOrEmpty -Because $fileName
+        }
     }
 
     It 'identifies changed, unchanged, added, and removed collectors' {

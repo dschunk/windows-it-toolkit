@@ -11,42 +11,33 @@
 [![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
 [![Validate SchunkOps](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml)
 
-**A practical Windows operations center for help desk technicians, sysadmins, infrastructure engineers, and incident responders.**
+**A practical IT operations center for help desk technicians, Windows sysadmins, Active Directory engineers, infrastructure teams, and incident responders.**
 
-The goal is simple: make common Windows troubleshooting and evidence collection fast, readable, safe, and easy to hand off to the next engineer.
+The goal is simple: turn common operational questions into safe, inspectable PowerShell objects that can be read by a technician, piped by an engineer, serialized by automation, and handed to the next person without a screen-sharing session.
+
+> **Collect first. Change second. Document always.**
 
 ## Start here by role
 
 | You are... | Start with... | Why |
 |---|---|---|
-| **Help desk / desktop support** | [`docs/HELPDESK.md`](docs/HELPDESK.md) | Five-minute triage, DNS, domain trust, SMB, RDP, escalation evidence |
-| **Windows sysadmin** | `Get-SchunkEndpointTriage` | One-screen endpoint/server health and configuration context |
+| **Help desk / desktop support** | [`docs/HELPDESK.md`](docs/HELPDESK.md) | Five-minute endpoint triage, DNS, trust, SMB, RDP, admin checks, escalation evidence |
+| **Windows sysadmin** | `Get-SchunkEndpointTriage` + `Get-SchunkFleetHealth` | Fast local triage plus multi-server health collection |
+| **AD / identity engineer** | `Get-SchunkADReplicationHealth` + `Get-SchunkAccountLockoutTrace` | Replication, trust, lockouts, SPNs, stale objects, GPO context |
+| **Senior infrastructure engineer** | [`docs/SENIOR-ENGINEER.md`](docs/SENIOR-ENGINEER.md) | Kerberos, GPO fingerprinting, DHCP/DNS, certificates, clusters, fleet, vSphere |
 | **Server engineer** | `Get-SchunkServerHealth` + `New-SchunkIncidentBundle` | Repeatable server evidence instead of screenshots |
-| **AD / identity engineer** | `Get-SchunkADReplicationHealth` + `Get-SchunkDomainTrustStatus` | Replication, trust, DC discovery, and reachability |
 | **Security / incident response** | [`docs/INCIDENT-RESPONSE.md`](docs/INCIDENT-RESPONSE.md) | Structured evidence with timestamps and SHA-256 hashes |
-| **Automation engineer** | `Import-Module SchunkOps` | Twenty object-producing commands designed for pipelines and runbooks |
+| **Automation engineer** | `Import-Module SchunkOps` | Twenty-eight object-producing commands designed for pipelines and runbooks |
 
 ## Five-minute help desk triage
-
-When a user says “my computer is broken,” start with one command:
 
 ```powershell
 Get-SchunkEndpointTriage
 ```
 
-It collects the first-contact signals technicians usually hunt down manually:
+That one command collects uptime, memory pressure, fixed disks, active IP/DNS/gateway/DHCP configuration, domain membership, machine secure-channel state, pending reboot indicators, Windows Time source, stopped automatic services, and recent System/Application critical and error counts.
 
-- uptime and last boot
-- memory pressure
-- disk capacity
-- active IPv4, gateway, DHCP, and DNS configuration
-- domain membership and machine secure-channel state
-- pending reboot state
-- Windows Time source
-- stopped automatic services
-- recent System and Application critical/error counts
-
-Need something you can attach to a ticket?
+Attach it to a ticket instead of sending screenshots:
 
 ```powershell
 Get-SchunkEndpointTriage |
@@ -54,11 +45,91 @@ Get-SchunkEndpointTriage |
     Set-Content .\endpoint-triage.json
 ```
 
-Then use the complete [SchunkOps Help Desk Field Guide](docs/HELPDESK.md) for “slow PC,” DNS, trust relationship, mapped drive, RDP, privilege, and escalation workflows.
+Then follow the complete [Help Desk Field Guide](docs/HELPDESK.md).
 
-## Start here: the 15-minute incident triage
+## Senior-engineer diagnostics
 
-When a Windows server is failing and the handoff needs evidence instead of screenshots, SchunkOps can collect a structured bundle in one command:
+SchunkOps 1.2 adds the problems that usually appear after first-line troubleshooting has run out of road.
+
+### Account keeps locking out
+
+```powershell
+Get-SchunkAccountLockoutTrace -Identity jsmith -LookbackHours 24 |
+    Sort-Object TimeCreatedUtc -Descending
+```
+
+The output shows which DC recorded event 4740 and which caller computer was reported as the lockout source.
+
+### Kerberos / duplicate SPN
+
+```powershell
+Get-SchunkKerberosSpnAudit -Identity svc_web
+Get-SchunkKerberosSpnAudit -ServicePrincipalName 'HTTP/app01.contoso.com'
+```
+
+Duplicate ownership is surfaced directly instead of making the operator interpret `setspn` output manually.
+
+### What changed in Group Policy?
+
+```powershell
+Get-SchunkGpoChangeAudit -SinceDays 14
+```
+
+Create a fingerprint baseline:
+
+```powershell
+Get-SchunkGpoChangeAudit -SinceDays 3650 -IncludeFingerprint |
+    ConvertTo-Json -Depth 5 |
+    Set-Content .\gpo-baseline.json
+```
+
+Compare later:
+
+```powershell
+Get-SchunkGpoChangeAudit -SinceDays 90 -BaselinePath .\gpo-baseline.json |
+    Where-Object ChangeState -in 'Changed','New'
+```
+
+### DHCP lease exists but DNS is stale
+
+```powershell
+Get-SchunkDhcpDnsConsistency -DhcpServer dhcp01 -ScopeId 10.20.30.0 |
+    Where-Object Status -ne 'Consistent'
+```
+
+### Certificate trust chain
+
+```powershell
+Test-SchunkCertificateChain -Path .\server.cer
+```
+
+### Failover cluster
+
+```powershell
+Get-SchunkClusterHealth -Cluster sqlcluster01 | Format-List
+```
+
+### Fleet health
+
+```powershell
+Get-SchunkFleetHealth -ComputerName (Get-Content .\servers.txt) |
+    Where-Object { -not $_.Healthy }
+```
+
+### vSphere inventory
+
+```powershell
+Connect-VIServer vcsa01.contoso.com
+Get-SchunkVSphereInventory -IncludeSnapshots -SnapshotAgeDays 7
+```
+
+SchunkOps never accepts vCenter credentials or connects on the operator's behalf. It uses the PowerCLI session you already established.
+
+Read the complete [Senior Engineer Field Guide](docs/SENIOR-ENGINEER.md).
+
+## Incident evidence
+
+When a Windows server is failing and the handoff needs evidence instead of screenshots:
 
 ```powershell
 New-SchunkIncidentBundle -OutputPath C:\IR\INC-0042 -Profile Full
@@ -66,7 +137,7 @@ New-SchunkIncidentBundle -OutputPath C:\IR\INC-0042 -Profile Full
 
 The bundle contains separate JSON evidence files, per-collector status, record counts, timestamps, and SHA-256 integrity hashes. Standard bundles include endpoint triage, server health, reboot state, listening ports, event triage, and service failures. Full bundles add trust state, local administrators, installed software, updates, scheduled tasks, failed logons, and BitLocker inventory.
 
-Capture the system again after remediation and compare what changed:
+Capture again after remediation and compare:
 
 ```powershell
 Compare-SchunkIncidentBundle `
@@ -74,13 +145,13 @@ Compare-SchunkIncidentBundle `
     -DifferencePath C:\IR\INC-0042-After
 ```
 
-Follow the complete, safety-conscious [15-minute Windows incident triage](docs/INCIDENT-RESPONSE.md).
+Follow the [15-minute Windows incident triage](docs/INCIDENT-RESPONSE.md).
 
 ## SchunkOps PowerShell module
 
-**SchunkOps** is the curated, installable module edition of this toolkit. Version **1.1.0** exports **20** public commands covering endpoint triage, Windows server health, networking, DNS, identity, Active Directory, security evidence, and incident response.
+Version **1.2.0** exports **28** public commands spanning help desk, Windows Server, Active Directory, Kerberos, Group Policy, DHCP/DNS, certificates, failover clustering, fleet operations, VMware vSphere, and incident response.
 
-Until the Gallery release is published, clone and import directly:
+Until the Gallery release is published:
 
 ```powershell
 git clone https://github.com/dschunk/windows-it-toolkit.git
@@ -88,31 +159,39 @@ Import-Module .\windows-it-toolkit\module\SchunkOps\SchunkOps.psd1
 Get-Command -Module SchunkOps
 ```
 
-Once published to the PowerShell Gallery:
+Once published:
 
 ```powershell
 Install-Module SchunkOps -Scope CurrentUser
 Import-Module SchunkOps
 ```
 
-### Twenty operational commands
+### Command catalog
 
 | Command | Operational use |
 |---|---|
 | **Get-SchunkEndpointTriage** | One-command first look for help desk and endpoint/server escalation |
-| **Get-SchunkDomainTrustStatus** | Domain membership, secure channel, logon/DC discovery, optional AD port checks |
-| **Test-SchunkDnsClient** | Query every DNS server configured on the endpoint and compare answers/latency |
-| **Get-SchunkADReplicationHealth** | Summarize DC replication failures, failed partners, and stale success intervals |
-| **Get-SchunkLocalAdministrator** | Inventory local Administrators membership locally or through PowerShell remoting |
+| **Get-SchunkFleetHealth** | Multi-server CIM health without installing SchunkOps remotely |
+| **Get-SchunkAccountLockoutTrace** | Correlate account lockout event 4740 across domain controllers |
+| **Get-SchunkKerberosSpnAudit** | Audit SPN ownership and detect duplicate Kerberos registrations |
+| **Get-SchunkADReplicationHealth** | Summarize DC replication failures, partners, and replication age |
+| **Get-SchunkDomainTrustStatus** | Domain membership, secure channel, DC discovery, optional AD port checks |
+| **Test-SchunkDnsClient** | Query every DNS server configured on the endpoint and compare results |
+| **Get-SchunkGpoChangeAudit** | Recent GPO changes plus optional SHA-256 report fingerprint comparison |
+| **Get-SchunkDhcpDnsConsistency** | Compare DHCP leases with A and PTR DNS answers |
+| **Test-SchunkCertificateChain** | Validate local X.509 trust chain without changing certificate stores |
+| **Get-SchunkClusterHealth** | Failover Cluster nodes, roles, resources, networks, CSVs, and quorum |
+| **Get-SchunkVSphereInventory** | Read-only PowerCLI vSphere inventory and health summary |
+| **Get-SchunkLocalAdministrator** | Inventory local Administrators membership locally or remotely |
 | **Get-SchunkDiskPressure** | Flag fixed disks by warning and critical free-space thresholds |
 | **New-SchunkIncidentBundle** | Coordinated JSON evidence collection with SHA-256 integrity hashes |
 | **Compare-SchunkIncidentBundle** | Compare two bundle manifests and identify changed evidence sets |
 | **Get-SchunkLogonFailure** | Group failed authentications by identity, source, event, and reason |
-| **Get-SchunkServiceFailure** | Find stopped automatic services and recent Service Control Manager failures |
+| **Get-SchunkServiceFailure** | Find stopped automatic services and recent SCM failures |
 | `Get-SchunkServerHealth` | Uptime, CPU, memory, disks, services, and recent system errors |
 | `Test-SchunkNetworkPath` | DNS, ICMP, TCP reachability, and latency |
 | `Test-SchunkTlsEndpoint` | TLS protocol, certificate identity, expiry, and response time |
-| `Get-SchunkPendingReboot` | Evidence from five Windows reboot indicators |
+| `Get-SchunkPendingReboot` | Evidence from Windows reboot indicators |
 | `Get-SchunkListeningPort` | TCP/UDP listeners mapped to owning processes |
 | `Get-SchunkEventTriage` | Grouped Windows warnings and errors |
 | `Get-SchunkInstalledSoftware` | Side-effect-free 32/64-bit software inventory |
@@ -124,55 +203,14 @@ Every command includes discoverable help:
 
 ```powershell
 Get-Help about_SchunkOps
-Get-Help Get-SchunkEndpointTriage -Full
-Get-Help Get-SchunkADReplicationHealth -Full
-```
-
-Release instructions and secret requirements are documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
-
-## Common IT workflows
-
-### Trust relationship failure
-
-```powershell
-Get-SchunkDomainTrustStatus
-Get-SchunkDomainTrustStatus -TestPorts
-Test-SchunkDnsClient -Name _ldap._tcp.dc._msdcs.contoso.com -Type SRV
-```
-
-The trust command is deliberately read-only. It does **not** reset the machine account, rejoin the domain, or change DNS.
-
-### “Works by IP, fails by hostname”
-
-```powershell
-Test-SchunkDnsClient -Name fileserver.contoso.com
-Test-SchunkNetworkPath -ComputerName fileserver.contoso.com -Port 445
-```
-
-### Active Directory replication
-
-```powershell
-Get-SchunkADReplicationHealth |
-    Format-Table DomainController,Site,Status,FailedPartnerCount,RecordedFailureCount,LargestReplicationAgeMinutes -AutoSize
-```
-
-### Local admin review
-
-```powershell
-Get-SchunkLocalAdministrator -ComputerName PC001,PC002,SERVER01
-```
-
-### Disk pressure
-
-```powershell
-Get-SchunkDiskPressure |
-    Where-Object Status -ne 'OK' |
-    Sort-Object FreePercent
+Get-Help Get-SchunkAccountLockoutTrace -Full
+Get-Help Get-SchunkKerberosSpnAudit -Full
+Get-Help Get-SchunkFleetHealth -Full
 ```
 
 ## Standalone field tools
 
-The repository also contains standalone `.ps1` tools for technicians who want one script without importing a module.
+The repository also contains **35 standalone `.ps1` tools** for technicians who want one script without importing a module.
 
 | Script | Purpose |
 |---|---|
@@ -204,7 +242,7 @@ The repository also contains standalone `.ps1` tools for technicians who want on
 | Get-SmbShareInventory.ps1 | Inventory SMB configuration, encryption, caching, and share permissions |
 | Get-UserProfileAudit.ps1 | Find large, old, loaded, and inactive local profiles |
 | Test-TimeSynchronization.ps1 | Measure Windows time offsets against one or more systems |
-| New-WindowsOpsSnapshot.ps1 | Run a coordinated set of collectors and export a timestamped JSON evidence bundle |
+| New-WindowsOpsSnapshot.ps1 | Run coordinated collectors and export a timestamped JSON evidence bundle |
 | Get-IISSiteInventory.ps1 | Inventory IIS sites, bindings, application pools, paths, runtime state, and logging |
 | Get-HyperVInventory.ps1 | Report Hyper-V VM state, resources, checkpoints, disks, networking, and lifecycle actions |
 | Get-PrintServerInventory.ps1 | Inventory printers, drivers, ports, sharing, publication, queues, and configuration |
@@ -212,40 +250,21 @@ The repository also contains standalone `.ps1` tools for technicians who want on
 | Get-EventLogConfiguration.ps1 | Review event-log enablement, retention mode, capacity, records, and file locations |
 | Get-EnvironmentPathAudit.ps1 | Detect missing, duplicate, and risky machine and user PATH entries |
 
-Example standalone usage:
-
-```powershell
-.\Get-ServerHealth.ps1
-.\Test-NetworkPath.ps1 -ComputerName server01 -Ports 53,80,443,3389
-.\Get-CertificateExpiry.ps1 -Days 60
-.\Find-LargeFiles.ps1 -Path C:\Logs -Top 25
-.\Test-ActiveDirectoryHealth.ps1
-.\Get-ADUserLifecycleAudit.ps1 -InactiveDays 90
-.\Test-DomainControllerPorts.ps1
-.\Get-FirewallExposure.ps1 -EnabledOnly
-.\Test-TimeSynchronization.ps1 -ComputerName dc01,dc02
-.\Test-RdpReadiness.ps1
-```
-
-Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running domain, DHCP, DNS, BitLocker, firewall, or remote-management collectors.
+Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running directory, DHCP, cluster, remote-management, or vSphere collectors.
 
 ## Design principles
 
-SchunkOps is intentionally opinionated:
-
-1. **Read-only by default.** Diagnostics should not accidentally become remediation.
-2. **Return objects, not pretty text.** A technician can read it; an engineer can pipe it; automation can serialize it.
+1. **Read-only by default.** Diagnostic tooling should not quietly become remediation tooling.
+2. **Return objects, not screenshots.** People can read objects; engineers can pipe them; automation can serialize them.
 3. **Collect before changing.** Evidence is easiest to understand before someone “tries a few things.”
 4. **Fail visibly.** Partial collection and errors belong in the output, not hidden behind a green check.
-5. **Build for handoff.** The next person should understand what was checked and what was not changed.
-6. **No phone-home telemetry.** The toolkit does not upload usage or operational data.
+5. **Use the operator's authentication.** SchunkOps does not accept vCenter credentials or invent privileged sessions.
+6. **Build for handoff.** The next engineer should understand what was checked and what was not changed.
+7. **No phone-home telemetry.** The toolkit does not upload usage or operational data.
 
 ## Quality gates
 
-Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules. SchunkOps also validates its manifest, imports the module, compares declared and actual exports, checks command help/attribution, and runs Pester tests.
-
-[![Validate PowerShell](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-powershell.yml)
-[![Validate SchunkOps](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml/badge.svg)](https://github.com/dschunk/windows-it-toolkit/actions/workflows/validate-module.yml)
+Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules. SchunkOps validates its manifest, imports the module, compares declared and actual exports, checks command help/attribution, and runs Pester tests. The 1.2 safety contract also statically rejects known state-changing AD, GPO, DHCP/DNS, cluster, and vSphere commands from the senior diagnostic set.
 
 ## Authorship and credit
 
@@ -255,14 +274,6 @@ The MIT License permits broad personal and commercial use while requiring preser
 
 > Based on the Windows IT Toolkit by David Schunk — https://github.com/dschunk/windows-it-toolkit
 
-Adoption is measured transparently through GitHub stars, forks, clones, issues, contributors, releases, and PowerShell Gallery downloads.
-
-The scripts use safe defaults, contain no credentials or environment-specific addresses, and return objects wherever practical. Review and test every script before production use.
-
 Issues and pull requests are welcome. Never include real credentials, tokens, private hostnames, proprietary data, or employer confidential/work-product material in examples.
-
-## Help build it
-
-The [public roadmap](ROADMAP.md) includes fleet operations, baselines, reporting, redaction, schemas, tests, and good first contributions. Pull requests use a safety and quality checklist so new tools remain predictable under pressure.
 
 **Collect first. Change second. Document always.**
