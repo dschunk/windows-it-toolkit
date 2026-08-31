@@ -4,7 +4,21 @@ All notable changes to the Windows IT Toolkit are recorded here.
 
 ## Unreleased
 
-- Prepare the next PowerShell Gallery release and broaden test coverage for remote and directory scenarios.
+- Prepare the next PowerShell Gallery release and broaden test coverage for live directory, cluster, DHCP, and vSphere environments.
+
+## 1.2.0 — 2026-08-31
+
+- Expanded SchunkOps from twenty to twenty-eight public commands.
+- Added `Get-SchunkAccountLockoutTrace` to correlate Security event 4740 across domain controllers and surface caller computers.
+- Added `Get-SchunkKerberosSpnAudit` for read-only SPN ownership and duplicate detection.
+- Added `Get-SchunkGpoChangeAudit` with recent-change review and optional SHA-256 GPO report fingerprint comparison.
+- Added `Get-SchunkDhcpDnsConsistency` to compare DHCP leases with forward and reverse DNS records.
+- Added `Test-SchunkCertificateChain` for local X.509 trust-chain diagnostics without modifying certificate stores.
+- Added `Get-SchunkClusterHealth` for Windows Failover Cluster node, role, resource, network, CSV, and quorum health.
+- Added `Get-SchunkFleetHealth` for multi-server CIM health collection without requiring SchunkOps on remote targets.
+- Added `Get-SchunkVSphereInventory` for read-only PowerCLI inventory, host health, datastore capacity, and optional snapshot review.
+- Added a Senior Engineer Field Guide covering account lockouts, Kerberos, GPO changes, DHCP/DNS, certificates, clustering, fleet triage, and vSphere.
+- Expanded the Pester safety contract to reject state-changing administrative commands from the senior diagnostic set.
 
 ## 1.1.0 — 2026-08-31
 
