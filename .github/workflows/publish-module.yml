@@ -4,9 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - 'release/v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 1.2.0'
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -20,6 +28,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolve release version
+        id: release
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $version = '${{ inputs.version }}'.TrimStart('v')
+          }
+          elseif ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          }
+          elseif ($env:GITHUB_REF_NAME -like 'release/v*') {
+            $version = $env:GITHUB_REF_NAME.Substring('release/v'.Length)
+          }
+          else {
+            throw "Unsupported release ref: $env:GITHUB_REF_NAME"
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release version must use semantic version format x.y.z. Received: $version"
+          }
+
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "tag=v$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Install release dependencies
         shell: pwsh
         run: |
@@ -27,14 +59,14 @@ jobs:
           Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
 
-      - name: Verify tag and module version
+      - name: Verify release version and manifest
         shell: pwsh
         run: |
           $manifestPath = Join-Path $PWD 'module\SchunkOps\SchunkOps.psd1'
           $manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
-          $tagVersion = $env:GITHUB_REF_NAME.TrimStart('v')
-          if ($tagVersion -ne $manifest.Version.ToString()) {
-            throw "Tag version $tagVersion does not match manifest version $($manifest.Version)."
+          $releaseVersion = '${{ steps.release.outputs.version }}'
+          if ($releaseVersion -ne $manifest.Version.ToString()) {
+            throw "Release version $releaseVersion does not match manifest version $($manifest.Version)."
           }
 
       - name: Run release quality gates
@@ -47,16 +79,19 @@ jobs:
             throw 'PSScriptAnalyzer found release-blocking errors.'
           }
 
+      - name: Verify release secrets
+        shell: pwsh
+        run: |
+          foreach ($name in 'PSGALLERY_API_KEY','CODESIGN_PFX_BASE64','CODESIGN_PFX_PASSWORD') {
+            $value = [Environment]::GetEnvironmentVariable($name)
+            if ([string]::IsNullOrWhiteSpace($value)) {
+              throw "$name is not configured in the powershell-gallery environment."
+            }
+          }
+
       - name: Authenticode sign module files
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_BASE64)) {
-            throw 'CODESIGN_PFX_BASE64 is not configured.'
-          }
-          if ([string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_PASSWORD)) {
-            throw 'CODESIGN_PFX_PASSWORD is not configured.'
-          }
-
           $pfxPath = Join-Path $env:RUNNER_TEMP 'schunkops-codesign.pfx'
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
           $password = ConvertTo-SecureString $env:CODESIGN_PFX_PASSWORD -AsPlainText -Force
@@ -65,6 +100,10 @@ jobs:
             $password,
             [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
           )
+
+          if (-not $certificate.HasPrivateKey) {
+            throw 'The configured code-signing certificate does not contain a private key.'
+          }
 
           $moduleFiles = Get-ChildItem '.\module\SchunkOps' -Recurse -File |
             Where-Object Extension -in '.ps1', '.psm1', '.psd1'
@@ -76,10 +115,85 @@ jobs:
             }
           }
 
+      - name: Build release artifact
+        shell: pwsh
+        run: |
+          $version = '${{ steps.release.outputs.version }}'
+          $artifactRoot = Join-Path $PWD 'artifacts'
+          $stagingRoot = Join-Path $artifactRoot "SchunkOps-$version"
+          $moduleTarget = Join-Path $stagingRoot 'SchunkOps'
+
+          New-Item -ItemType Directory -Path $moduleTarget -Force | Out-Null
+          Copy-Item '.\module\SchunkOps\*' $moduleTarget -Recurse -Force
+          Copy-Item '.\LICENSE' (Join-Path $stagingRoot 'LICENSE') -Force
+          Copy-Item '.\CHANGELOG.md' (Join-Path $stagingRoot 'CHANGELOG.md') -Force
+          Copy-Item '.\docs\QUICKSTART.md' (Join-Path $stagingRoot 'QUICKSTART.md') -Force -ErrorAction SilentlyContinue
+
+          $zipPath = Join-Path $artifactRoot "SchunkOps-$version.zip"
+          Compress-Archive -Path "$stagingRoot\*" -DestinationPath $zipPath -Force
+          $hash = Get-FileHash $zipPath -Algorithm SHA256
+          "$($hash.Hash)  $([IO.Path]::GetFileName($zipPath))" | Set-Content (Join-Path $artifactRoot "SchunkOps-$version.sha256")
+
       - name: Publish to PowerShell Gallery
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
-            throw 'PSGALLERY_API_KEY is not configured.'
-          }
           Publish-Module -Path '.\module\SchunkOps' -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
+
+      - name: Verify Gallery publication
+        shell: pwsh
+        run: |
+          $expected = '${{ steps.release.outputs.version }}'
+          $deadline = (Get-Date).AddMinutes(5)
+          do {
+            try {
+              $published = Find-Module SchunkOps -Repository PSGallery -RequiredVersion $expected -ErrorAction Stop
+              if ($published.Version.ToString() -eq $expected) { break }
+            }
+            catch {
+              Start-Sleep -Seconds 15
+            }
+          } while ((Get-Date) -lt $deadline)
+
+          if (-not $published -or $published.Version.ToString() -ne $expected) {
+            throw "SchunkOps $expected was not visible in PowerShell Gallery within the verification window."
+          }
+
+      - name: Create GitHub release
+        if: github.ref_type != 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ steps.release.outputs.version }}'
+          $tag = '${{ steps.release.outputs.tag }}'
+          $notesPath = ".\docs\releases\v$version.md"
+          $notesArgs = @('--generate-notes')
+          if (Test-Path $notesPath) {
+            $notesArgs = @('--notes-file', $notesPath)
+          }
+
+          $assets = @(
+            ".\artifacts\SchunkOps-$version.zip",
+            ".\artifacts\SchunkOps-$version.sha256"
+          )
+
+          gh release create $tag @assets --target $env:GITHUB_SHA --title "SchunkOps $version" @notesArgs
+
+      - name: Attach artifacts to tag-triggered release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ steps.release.outputs.version }}'
+          $tag = '${{ steps.release.outputs.tag }}'
+          if (-not (gh release view $tag 2>$null)) {
+            $notesPath = ".\docs\releases\v$version.md"
+            if (Test-Path $notesPath) {
+              gh release create $tag --title "SchunkOps $version" --notes-file $notesPath
+            }
+            else {
+              gh release create $tag --title "SchunkOps $version" --generate-notes
+            }
+          }
+          gh release upload $tag ".\artifacts\SchunkOps-$version.zip" ".\artifacts\SchunkOps-$version.sha256" --clobber
