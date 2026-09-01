@@ -16,15 +16,16 @@ on:
 permissions:
   contents: write
 
-jobs:
-  publish:
-    runs-on: windows-latest
-    environment: powershell-gallery
-    env:
-      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-      CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
-      CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+concurrency:
+  group: schunkops-release-${{ github.ref_name }}
+  cancel-in-progress: false
 
+jobs:
+  release:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,8 +63,7 @@ jobs:
       - name: Verify release version and manifest
         shell: pwsh
         run: |
-          $manifestPath = Join-Path $PWD 'module\SchunkOps\SchunkOps.psd1'
-          $manifest = Test-ModuleManifest -Path $manifestPath -ErrorAction Stop
+          $manifest = Test-ModuleManifest -Path '.\module\SchunkOps\SchunkOps.psd1' -ErrorAction Stop
           $releaseVersion = '${{ steps.release.outputs.version }}'
           if ($releaseVersion -ne $manifest.Version.ToString()) {
             throw "Release version $releaseVersion does not match manifest version $($manifest.Version)."
@@ -77,42 +77,6 @@ jobs:
           if ($analysis) {
             $analysis | Format-Table -AutoSize
             throw 'PSScriptAnalyzer found release-blocking errors.'
-          }
-
-      - name: Verify release secrets
-        shell: pwsh
-        run: |
-          foreach ($name in 'PSGALLERY_API_KEY','CODESIGN_PFX_BASE64','CODESIGN_PFX_PASSWORD') {
-            $value = [Environment]::GetEnvironmentVariable($name)
-            if ([string]::IsNullOrWhiteSpace($value)) {
-              throw "$name is not configured in the powershell-gallery environment."
-            }
-          }
-
-      - name: Authenticode sign module files
-        shell: pwsh
-        run: |
-          $pfxPath = Join-Path $env:RUNNER_TEMP 'schunkops-codesign.pfx'
-          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
-          $password = ConvertTo-SecureString $env:CODESIGN_PFX_PASSWORD -AsPlainText -Force
-          $certificate = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
-            $pfxPath,
-            $password,
-            [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
-          )
-
-          if (-not $certificate.HasPrivateKey) {
-            throw 'The configured code-signing certificate does not contain a private key.'
-          }
-
-          $moduleFiles = Get-ChildItem '.\module\SchunkOps' -Recurse -File |
-            Where-Object Extension -in '.ps1', '.psm1', '.psd1'
-
-          foreach ($file in $moduleFiles) {
-            $signature = Set-AuthenticodeSignature -FilePath $file.FullName -Certificate $certificate -HashAlgorithm SHA256 -TimestampServer 'http://timestamp.digicert.com'
-            if ($signature.Status -ne 'Valid') {
-              throw "Signing failed for $($file.FullName): $($signature.StatusMessage)"
-            }
           }
 
       - name: Build release artifact
@@ -134,7 +98,105 @@ jobs:
           $hash = Get-FileHash $zipPath -Algorithm SHA256
           "$($hash.Hash)  $([IO.Path]::GetFileName($zipPath))" | Set-Content (Join-Path $artifactRoot "SchunkOps-$version.sha256")
 
+      - name: Create or update GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ steps.release.outputs.version }}'
+          $tag = '${{ steps.release.outputs.tag }}'
+          $notesPath = ".\docs\releases\v$version.md"
+          $zip = ".\artifacts\SchunkOps-$version.zip"
+          $hash = ".\artifacts\SchunkOps-$version.sha256"
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            if (Test-Path $notesPath) {
+              gh release edit $tag --title "SchunkOps $version" --notes-file $notesPath
+            }
+            gh release upload $tag $zip $hash --clobber
+          }
+          else {
+            if (Test-Path $notesPath) {
+              gh release create $tag $zip $hash --target $env:GITHUB_SHA --title "SchunkOps $version" --notes-file $notesPath
+            }
+            else {
+              gh release create $tag $zip $hash --target $env:GITHUB_SHA --title "SchunkOps $version" --generate-notes
+            }
+          }
+
+  publish-gallery:
+    needs: release
+    runs-on: windows-latest
+    environment: powershell-gallery
+    env:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+      CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
+      CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare PowerShell Gallery
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
+            throw 'PSGALLERY_API_KEY is not configured in the powershell-gallery environment.'
+          }
+
+      - name: Check whether version is already published
+        id: gallery
+        shell: pwsh
+        run: |
+          $version = '${{ needs.release.outputs.version }}'
+          $exists = $false
+          try {
+            $module = Find-Module SchunkOps -Repository PSGallery -RequiredVersion $version -ErrorAction Stop
+            $exists = $module.Version.ToString() -eq $version
+          }
+          catch {
+            $exists = $false
+          }
+          "exists=$($exists.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Authenticode sign module files when certificate is configured
+        if: steps.gallery.outputs.exists != 'true'
+        shell: pwsh
+        run: |
+          $hasPfx = -not [string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_BASE64)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_PASSWORD)
+
+          if (-not $hasPfx -and -not $hasPassword) {
+            Write-Warning 'Code-signing secrets are not configured. Publishing the CI-validated module without Authenticode signing.'
+            exit 0
+          }
+          if ($hasPfx -ne $hasPassword) {
+            throw 'Both CODESIGN_PFX_BASE64 and CODESIGN_PFX_PASSWORD must be configured together.'
+          }
+
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'schunkops-codesign.pfx'
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CODESIGN_PFX_BASE64))
+          $password = ConvertTo-SecureString $env:CODESIGN_PFX_PASSWORD -AsPlainText -Force
+          $certificate = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $pfxPath,
+            $password,
+            [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable
+          )
+          if (-not $certificate.HasPrivateKey) {
+            throw 'The configured code-signing certificate does not contain a private key.'
+          }
+
+          $moduleFiles = Get-ChildItem '.\module\SchunkOps' -Recurse -File |
+            Where-Object Extension -in '.ps1', '.psm1', '.psd1'
+          foreach ($file in $moduleFiles) {
+            $signature = Set-AuthenticodeSignature -FilePath $file.FullName -Certificate $certificate -HashAlgorithm SHA256 -TimestampServer 'http://timestamp.digicert.com'
+            if ($signature.Status -ne 'Valid') {
+              throw "Signing failed for $($file.FullName): $($signature.StatusMessage)"
+            }
+          }
+
       - name: Publish to PowerShell Gallery
+        if: steps.gallery.outputs.exists != 'true'
         shell: pwsh
         run: |
           Publish-Module -Path '.\module\SchunkOps' -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
@@ -142,8 +204,9 @@ jobs:
       - name: Verify Gallery publication
         shell: pwsh
         run: |
-          $expected = '${{ steps.release.outputs.version }}'
+          $expected = '${{ needs.release.outputs.version }}'
           $deadline = (Get-Date).AddMinutes(5)
+          $published = $null
           do {
             try {
               $published = Find-Module SchunkOps -Repository PSGallery -RequiredVersion $expected -ErrorAction Stop
@@ -157,43 +220,3 @@ jobs:
           if (-not $published -or $published.Version.ToString() -ne $expected) {
             throw "SchunkOps $expected was not visible in PowerShell Gallery within the verification window."
           }
-
-      - name: Create GitHub release
-        if: github.ref_type != 'tag'
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $version = '${{ steps.release.outputs.version }}'
-          $tag = '${{ steps.release.outputs.tag }}'
-          $notesPath = ".\docs\releases\v$version.md"
-          $notesArgs = @('--generate-notes')
-          if (Test-Path $notesPath) {
-            $notesArgs = @('--notes-file', $notesPath)
-          }
-
-          $assets = @(
-            ".\artifacts\SchunkOps-$version.zip",
-            ".\artifacts\SchunkOps-$version.sha256"
-          )
-
-          gh release create $tag @assets --target $env:GITHUB_SHA --title "SchunkOps $version" @notesArgs
-
-      - name: Attach artifacts to tag-triggered release
-        if: github.ref_type == 'tag'
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $version = '${{ steps.release.outputs.version }}'
-          $tag = '${{ steps.release.outputs.tag }}'
-          if (-not (gh release view $tag 2>$null)) {
-            $notesPath = ".\docs\releases\v$version.md"
-            if (Test-Path $notesPath) {
-              gh release create $tag --title "SchunkOps $version" --notes-file $notesPath
-            }
-            else {
-              gh release create $tag --title "SchunkOps $version" --generate-notes
-            }
-          }
-          gh release upload $tag ".\artifacts\SchunkOps-$version.zip" ".\artifacts\SchunkOps-$version.sha256" --clobber
