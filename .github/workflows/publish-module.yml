@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       tag: ${{ steps.release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve release version
         id: release
@@ -134,17 +134,21 @@ jobs:
       CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
       CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Prepare PowerShell Gallery
+        id: gallery-config
         shell: pwsh
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
-            throw 'PSGALLERY_API_KEY is not configured in the powershell-gallery environment.'
+          $available = -not [string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)
+          "available=$($available.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          if (-not $available) {
+            Write-Warning 'PSGALLERY_API_KEY is not configured in the powershell-gallery environment. Skipping Gallery publication while keeping the GitHub release valid.'
           }
 
       - name: Check whether version is already published
+        if: steps.gallery-config.outputs.available == 'true'
         id: gallery
         shell: pwsh
         run: |
@@ -160,7 +164,7 @@ jobs:
           "exists=$($exists.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Authenticode sign module files when certificate is configured
-        if: steps.gallery.outputs.exists != 'true'
+        if: steps.gallery-config.outputs.available == 'true' && steps.gallery.outputs.exists != 'true'
         shell: pwsh
         run: |
           $hasPfx = -not [string]::IsNullOrWhiteSpace($env:CODESIGN_PFX_BASE64)
@@ -196,12 +200,13 @@ jobs:
           }
 
       - name: Publish to PowerShell Gallery
-        if: steps.gallery.outputs.exists != 'true'
+        if: steps.gallery-config.outputs.available == 'true' && steps.gallery.outputs.exists != 'true'
         shell: pwsh
         run: |
           Publish-Module -Path '.\module\SchunkOps' -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
 
       - name: Verify Gallery publication
+        if: steps.gallery-config.outputs.available == 'true'
         shell: pwsh
         run: |
           $expected = '${{ needs.release.outputs.version }}'
