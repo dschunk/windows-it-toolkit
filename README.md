@@ -27,7 +27,7 @@ The goal is simple: turn common operational questions into safe, inspectable Pow
 | **Senior infrastructure engineer** | [`docs/SENIOR-ENGINEER.md`](docs/SENIOR-ENGINEER.md) | Kerberos, GPO fingerprinting, DHCP/DNS, certificates, clusters, fleet, vSphere |
 | **Server engineer** | `Get-SchunkServerHealth` + `New-SchunkIncidentBundle` | Repeatable server evidence instead of screenshots |
 | **Security / incident response** | [`docs/INCIDENT-RESPONSE.md`](docs/INCIDENT-RESPONSE.md) | Structured evidence with timestamps and SHA-256 hashes |
-| **Automation engineer** | `Import-Module SchunkOps` | Twenty-eight object-producing commands designed for pipelines and runbooks |
+| **Automation engineer** | `Import-Module SchunkOps` | Forty-four object-producing commands designed for pipelines and runbooks |
 
 ## Five-minute help desk triage
 
@@ -49,7 +49,22 @@ Then follow the complete [Help Desk Field Guide](docs/HELPDESK.md).
 
 ## Senior-engineer diagnostics
 
-SchunkOps 1.3 expands the toolkit into a fuller Windows Server operations layer while keeping the same rule: collect evidence first and avoid hidden configuration changes.
+SchunkOps 1.4 expands the toolkit deeper into day-two Windows operations while keeping the same rule: collect evidence first and avoid hidden configuration changes.
+
+### Day-two operations diagnostics
+
+```powershell
+Get-SchunkFirewallAudit -IncludeRules
+Get-SchunkRdpHealth
+Get-SchunkDfsNamespaceHealth
+Get-SchunkCertificateInventory -WarningDays 45
+Get-SchunkPrivilegedGroupAudit
+Get-SchunkIisLogSummary -Hours 24
+Get-SchunkSqlServerHealth
+Get-SchunkWindowsBackupHealth
+```
+
+These commands cover firewall posture, Remote Desktop/NLA, DFS Namespace targets, certificate lifecycle, privileged AD membership, IIS request evidence, SQL Server service/listener state, and Windows Server Backup evidence.
 
 ### Full Windows Server audit
 
@@ -171,7 +186,7 @@ Follow the [15-minute Windows incident triage](docs/INCIDENT-RESPONSE.md).
 
 ## SchunkOps PowerShell module
 
-Version **1.3.0** exports **36** public commands spanning help desk, Windows Server, Active Directory, Kerberos, Group Policy, DHCP/DNS, certificates, failover clustering, fleet operations, VMware vSphere, and incident response.
+Version **1.4.0** exports **44** public commands spanning help desk, Windows Server, Active Directory, Kerberos, Group Policy, DHCP/DNS, certificates, failover clustering, fleet operations, VMware vSphere, and incident response.
 
 Until the Gallery release is published:
 
@@ -192,6 +207,14 @@ Import-Module SchunkOps
 
 | Command | Operational use |
 |---|---|
+| **Get-SchunkFirewallAudit** | Firewall profile posture, enabled-rule counts, and optional rule inventory |
+| **Get-SchunkRdpHealth** | RDP enablement, NLA, listener, service, port, and firewall health |
+| **Get-SchunkDfsNamespaceHealth** | DFS Namespace roots, folders, targets, and service state |
+| **Get-SchunkCertificateInventory** | Local-machine certificate inventory with expiry and private-key context |
+| **Get-SchunkPrivilegedGroupAudit** | Recursive membership audit of well-known privileged Active Directory groups |
+| **Get-SchunkIisLogSummary** | Recent IIS W3C request, status-code, URI, and client summary |
+| **Get-SchunkSqlServerHealth** | Local SQL Server instances, services, stopped auto-services, and TCP listeners |
+| **Get-SchunkWindowsBackupHealth** | Windows Server Backup status, versions, service, and scheduled-task evidence |
 | **Invoke-SchunkServerAudit** | Coordinated Windows Server health collection with optional self-contained HTML report |
 | **Get-SchunkIisHealth** | IIS sites, bindings, application pools, and stopped-state summary |
 | **Get-SchunkHyperVHealth** | Hyper-V host, VM, VHD/VHDX, switch, integration service, and checkpoint health |
@@ -294,7 +317,7 @@ Review the [requirements and privilege guide](docs/PRIVILEGES.md) before running
 
 ## Quality gates
 
-Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules. SchunkOps validates its manifest, imports the module, compares declared and actual exports, checks command help/attribution, and runs Pester tests. The 1.2 safety contract also statically rejects known state-changing AD, GPO, DHCP/DNS, cluster, and vSphere commands from the senior diagnostic set.
+Every push and pull request is parsed on a Windows runner and checked with PSScriptAnalyzer error rules. SchunkOps validates its manifest, imports the module, compares declared and actual exports, checks command help/attribution, and runs Pester tests. The safety contract statically rejects known state-changing AD, GPO, DHCP/DNS, firewall, DFS, cluster, and vSphere commands from the senior diagnostic set.
 
 ## Authorship and credit
 
