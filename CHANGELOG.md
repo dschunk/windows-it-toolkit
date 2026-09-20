@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.3.0 — 2026-09-20
+
+### Added
+- `Invoke-SchunkServerAudit` for coordinated Windows Server evidence collection and optional HTML reporting.
+- `Get-SchunkIisHealth` for IIS sites, bindings, and application pools.
+- `Get-SchunkHyperVHealth` for Hyper-V host, VM, disk, switch, integration-service, and checkpoint health.
+- `Get-SchunkSmbPermissionAudit` for share permissions and NTFS ACL review.
+- `Test-SchunkGpoApplication` for non-destructive GPResult evidence.
+- `Get-SchunkDnsServerHealth` for DNS zones and forwarders.
+- `Get-SchunkDhcpScopeHealth` for scope utilization, state, and failover relationships.
+- `Get-SchunkWindowsUpdateHealth` for pending updates, update history, and reboot state.
+
+### Changed
+- Module version raised to 1.3.0.
+- Public command count increased from 28 to 36.
+- README and module tests updated for the Windows Server operations release.
+
+
 All notable changes to the Windows IT Toolkit are recorded here.
 
 ## Unreleased

@@ -49,7 +49,29 @@ Then follow the complete [Help Desk Field Guide](docs/HELPDESK.md).
 
 ## Senior-engineer diagnostics
 
-SchunkOps 1.2 adds the problems that usually appear after first-line troubleshooting has run out of road.
+SchunkOps 1.3 expands the toolkit into a fuller Windows Server operations layer while keeping the same rule: collect evidence first and avoid hidden configuration changes.
+
+### Full Windows Server audit
+
+```powershell
+Invoke-SchunkServerAudit -IncludeIis -IncludeHyperV -HtmlPath C:\Reports\server-audit.html
+```
+
+The audit combines server health, reboot state, service failures, event triage, listening ports, Windows Update health, and optional IIS/Hyper-V detail into one object plus an optional portable HTML report.
+
+### Role-specific server checks
+
+```powershell
+Get-SchunkIisHealth
+Get-SchunkHyperVHealth
+Get-SchunkSmbPermissionAudit
+Test-SchunkGpoApplication
+Get-SchunkDnsServerHealth -ComputerName DC01
+Get-SchunkDhcpScopeHealth -ComputerName DHCP01
+Get-SchunkWindowsUpdateHealth
+```
+
+SchunkOps 1.2 added the problems that usually appear after first-line troubleshooting has run out of road.
 
 ### Account keeps locking out
 
@@ -149,7 +171,7 @@ Follow the [15-minute Windows incident triage](docs/INCIDENT-RESPONSE.md).
 
 ## SchunkOps PowerShell module
 
-Version **1.2.0** exports **28** public commands spanning help desk, Windows Server, Active Directory, Kerberos, Group Policy, DHCP/DNS, certificates, failover clustering, fleet operations, VMware vSphere, and incident response.
+Version **1.3.0** exports **36** public commands spanning help desk, Windows Server, Active Directory, Kerberos, Group Policy, DHCP/DNS, certificates, failover clustering, fleet operations, VMware vSphere, and incident response.
 
 Until the Gallery release is published:
 
@@ -170,6 +192,14 @@ Import-Module SchunkOps
 
 | Command | Operational use |
 |---|---|
+| **Invoke-SchunkServerAudit** | Coordinated Windows Server health collection with optional self-contained HTML report |
+| **Get-SchunkIisHealth** | IIS sites, bindings, application pools, and stopped-state summary |
+| **Get-SchunkHyperVHealth** | Hyper-V host, VM, VHD/VHDX, switch, integration service, and checkpoint health |
+| **Get-SchunkSmbPermissionAudit** | SMB share permissions plus NTFS ACLs at the share root |
+| **Test-SchunkGpoApplication** | Local GPResult evidence for computer and user resultant policy |
+| **Get-SchunkDnsServerHealth** | Windows DNS Server zone and forwarder health |
+| **Get-SchunkDhcpScopeHealth** | DHCP scope state, utilization, and failover relationships |
+| **Get-SchunkWindowsUpdateHealth** | Pending updates, recent history, and reboot state |
 | **Get-SchunkEndpointTriage** | One-command first look for help desk and endpoint/server escalation |
 | **Get-SchunkFleetHealth** | Multi-server CIM health without installing SchunkOps remotely |
 | **Get-SchunkAccountLockoutTrace** | Correlate account lockout event 4740 across domain controllers |
