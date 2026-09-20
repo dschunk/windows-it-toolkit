@@ -6,13 +6,14 @@ SHORT DESCRIPTION
 
 LONG DESCRIPTION
     SchunkOps is the installable PowerShell module from the Windows IT Toolkit.
-    Version 1.2 provides twenty-eight object-first commands for endpoint triage,
-    Windows server health, DNS and network diagnostics, domain trust, Active Directory
-    replication, account lockout tracing, Kerberos SPN analysis, Group Policy change
-    review, DHCP/DNS consistency, certificate-chain validation, failover-cluster health,
-    fleet CIM health, VMware vSphere inventory, local administrator review, TLS, events,
-    software, updates, scheduled tasks, listening ports, pending reboots, BitLocker,
-    authentication, and service failures.
+    Version 1.4 provides forty-four object-first commands spanning endpoint triage,
+    Windows Server health, DNS and network diagnostics, domain trust, Active Directory
+    replication and privileged groups, account lockouts, Kerberos, Group Policy,
+    DHCP/DNS, certificates, firewall posture, RDP/NLA, DFS Namespace, IIS health and
+    logs, Hyper-V, SQL Server, Windows Server Backup, failover clustering, fleet CIM
+    health, VMware vSphere, local administrators, TLS, events, software, updates,
+    scheduled tasks, listening ports, pending reboots, BitLocker, authentication,
+    and service failures.
 
     SchunkOps can also create integrity-hashed incident bundles and compare evidence
     captures before and after remediation.
@@ -55,3 +56,15 @@ WINDOWS SERVER OPERATIONS
 
     Example:
         Invoke-SchunkServerAudit -IncludeIis -IncludeHyperV -HtmlPath C:\Reports\server-audit.html
+
+
+DAY-TWO OPERATIONS
+    SchunkOps 1.4 adds read-only diagnostics for firewall posture, Remote Desktop,
+    DFS Namespace, certificate inventory, privileged Active Directory groups,
+    IIS W3C logs, local SQL Server services/listeners, and Windows Server Backup.
+
+    Example:
+        Get-SchunkFirewallAudit -IncludeRules
+        Get-SchunkCertificateInventory -WarningDays 45
+        Get-SchunkPrivilegedGroupAudit
+        Get-SchunkSqlServerHealth
