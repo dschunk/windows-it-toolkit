@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.0 — 2026-09-20
+
+### Added
+- `Get-SchunkFirewallAudit` for firewall profile posture and enabled-rule review.
+- `Get-SchunkRdpHealth` for RDP enablement, NLA, listener, service, port, and firewall evidence.
+- `Get-SchunkDfsNamespaceHealth` for DFS Namespace root, folder, target, and service state.
+- `Get-SchunkCertificateInventory` for local-machine certificate lifecycle inventory.
+- `Get-SchunkPrivilegedGroupAudit` for recursive review of well-known privileged AD groups.
+- `Get-SchunkIisLogSummary` for recent IIS W3C request and status-code summaries.
+- `Get-SchunkSqlServerHealth` for local SQL instance, service, and TCP listener health.
+- `Get-SchunkWindowsBackupHealth` for Windows Server Backup service, status, versions, and task evidence.
+
+### Changed
+- Module version raised to 1.4.0.
+- Public command count increased from 36 to 44.
+- Safety tests expanded to reject firewall, DFS, and privileged-group state-changing commands from the diagnostic set.
+
+
 ## 1.3.0 — 2026-09-20
 
 ### Added

@@ -6,7 +6,7 @@ Describe 'SchunkOps module' {
 
     It 'has valid manifest metadata' {
         $manifest.Name | Should -Be 'SchunkOps'
-        $manifest.Version.ToString() | Should -Be '1.3.0'
+        $manifest.Version.ToString() | Should -Be '1.4.0'
         $manifest.Author | Should -Be 'David Maksim Schunk'
     }
 
@@ -20,7 +20,7 @@ Describe 'SchunkOps module' {
         $expected = @($manifest.ExportedFunctions.Keys) | Sort-Object
 
         Compare-Object -ReferenceObject $expected -DifferenceObject $actual | Should -BeNullOrEmpty
-        $actual.Count | Should -Be 36
+        $actual.Count | Should -Be 44
     }
 
     It 'provides synopsis help and David Schunk attribution for every public function' {
@@ -57,10 +57,18 @@ Describe 'SchunkOps module' {
             'Get-SchunkDhcpScopeHealth.ps1'
             'Get-SchunkDnsServerHealth.ps1'
             'Test-SchunkCertificateChain.ps1'
+            'Get-SchunkCertificateInventory.ps1'
             'Get-SchunkClusterHealth.ps1'
+            'Get-SchunkDfsNamespaceHealth.ps1'
+            'Get-SchunkFirewallAudit.ps1'
             'Get-SchunkHyperVHealth.ps1'
             'Get-SchunkIisHealth.ps1'
+            'Get-SchunkIisLogSummary.ps1'
+            'Get-SchunkPrivilegedGroupAudit.ps1'
+            'Get-SchunkRdpHealth.ps1'
             'Get-SchunkSmbPermissionAudit.ps1'
+            'Get-SchunkSqlServerHealth.ps1'
+            'Get-SchunkWindowsBackupHealth.ps1'
             'Get-SchunkWindowsUpdateHealth.ps1'
             'Test-SchunkGpoApplication.ps1'
             'Get-SchunkFleetHealth.ps1'
@@ -85,6 +93,17 @@ Describe 'SchunkOps module' {
             'Set-VM'
             'Move-VM'
             'Remove-Snapshot'
+            'Set-NetFirewallProfile'
+            'Set-NetFirewallRule'
+            'New-NetFirewallRule'
+            'Enable-NetFirewallRule'
+            'Disable-NetFirewallRule'
+            'Set-ADGroup'
+            'Add-ADGroupMember'
+            'Remove-ADGroupMember'
+            'Set-DfsnRoot'
+            'Set-DfsnFolder'
+            'Set-DfsnFolderTarget'
         )
 
         foreach ($fileName in $seniorFiles) {
