@@ -46,3 +46,12 @@ PROJECT
 
 LICENSE
     MIT License
+
+
+WINDOWS SERVER OPERATIONS
+    SchunkOps 1.3 adds a coordinated Windows Server audit and focused read-only
+    diagnostics for IIS, Hyper-V, SMB/NTFS permissions, Group Policy application,
+    Windows DNS Server, Windows DHCP Server, and Windows Update health.
+
+    Example:
+        Invoke-SchunkServerAudit -IncludeIis -IncludeHyperV -HtmlPath C:\Reports\server-audit.html
