@@ -6,7 +6,7 @@ Describe 'SchunkOps module' {
 
     It 'has valid manifest metadata' {
         $manifest.Name | Should -Be 'SchunkOps'
-        $manifest.Version.ToString() | Should -Be '1.2.0'
+        $manifest.Version.ToString() | Should -Be '1.3.0'
         $manifest.Author | Should -Be 'David Maksim Schunk'
     }
 
@@ -20,7 +20,7 @@ Describe 'SchunkOps module' {
         $expected = @($manifest.ExportedFunctions.Keys) | Sort-Object
 
         Compare-Object -ReferenceObject $expected -DifferenceObject $actual | Should -BeNullOrEmpty
-        $actual.Count | Should -Be 28
+        $actual.Count | Should -Be 36
     }
 
     It 'provides synopsis help and David Schunk attribution for every public function' {
@@ -54,8 +54,15 @@ Describe 'SchunkOps module' {
             'Get-SchunkKerberosSpnAudit.ps1'
             'Get-SchunkGpoChangeAudit.ps1'
             'Get-SchunkDhcpDnsConsistency.ps1'
+            'Get-SchunkDhcpScopeHealth.ps1'
+            'Get-SchunkDnsServerHealth.ps1'
             'Test-SchunkCertificateChain.ps1'
             'Get-SchunkClusterHealth.ps1'
+            'Get-SchunkHyperVHealth.ps1'
+            'Get-SchunkIisHealth.ps1'
+            'Get-SchunkSmbPermissionAudit.ps1'
+            'Get-SchunkWindowsUpdateHealth.ps1'
+            'Test-SchunkGpoApplication.ps1'
             'Get-SchunkFleetHealth.ps1'
             'Get-SchunkVSphereInventory.ps1'
         )
