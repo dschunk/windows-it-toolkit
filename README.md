@@ -28,6 +28,7 @@ The goal is simple: turn common operational questions into safe, inspectable Pow
 | **Server engineer** | `Get-SchunkServerHealth` + `New-SchunkIncidentBundle` | Repeatable server evidence instead of screenshots |
 | **Security / incident response** | [`docs/INCIDENT-RESPONSE.md`](docs/INCIDENT-RESPONSE.md) | Structured evidence with timestamps and SHA-256 hashes |
 | **Automation engineer** | `Import-Module SchunkOps` | Forty-four object-producing commands designed for pipelines and runbooks |
+| **Instructor / professor** | [`docs/CLASSROOM.md`](docs/CLASSROOM.md) | Lab sequences, learning objectives, assessment ideas, and evidence-first teaching scenarios |
 
 ## Five-minute help desk triage
 
@@ -162,7 +163,7 @@ Get-SchunkVSphereInventory -IncludeSnapshots -SnapshotAgeDays 7
 
 SchunkOps never accepts vCenter credentials or connects on the operator's behalf. It uses the PowerCLI session you already established.
 
-Read the complete [Senior Engineer Field Guide](docs/SENIOR-ENGINEER.md).
+Read the complete [Senior Engineer Field Guide](docs/SENIOR-ENGINEER.md). Instructors can also use the [Classroom & Lab Guide](docs/CLASSROOM.md) for assignment-ready scenarios and assessment ideas.
 
 ## Incident evidence
 
