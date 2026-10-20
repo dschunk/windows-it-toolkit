@@ -19,9 +19,9 @@ The goal is simple: turn common operational questions into safe, inspectable Pow
 
 ## TicketReady — free one-click Windows support report
 
-**[Download TicketReady v0.1.0](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.1.0)** · [What it checks & how to run it](tools/TicketReady/README.md) · [View the source](tools/TicketReady/TicketReady.ps1)
+**[Download TicketReady v0.2.1](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.2.1)** · [What it checks & how to run it](tools/TicketReady/README.md) · [View the source](tools/TicketReady/TicketReady.ps1)
 
-TicketReady is a separate portable tool built for anyone who needs a Windows troubleshooting starting point, not just PowerShell engineers. Extract the ZIP and double-click `RUN-TicketReady.cmd` to produce a local, shareable HTML/JSON diagnostic summary. No installer, administrator privileges, persistent changes, or outgoing network requests. Review reports for private details before sharing. This complements the deeper SchunkOps PowerShell module.
+TicketReady is a separate portable tool built for anyone who needs a Windows troubleshooting starting point, not just PowerShell engineers. Extract the ZIP and double-click `RUN-TicketReady.cmd` for a general report or `RUN-TicketReady-Guided.cmd` for tailored first-response questions. You can also compare two local JSON snapshots for before/after changes. No installer, administrator privileges, persistent changes, or outgoing network requests. Review reports for private details before sharing. This complements the deeper SchunkOps PowerShell module.
 
 ## Companion troubleshooting guide
 
