@@ -84,6 +84,20 @@ jobs:
           $result = Get-Content $json.FullName -Raw | ConvertFrom-Json
           if ($result.Demo -or -not $result.Windows.Name) { throw 'Unexpected report values' }
 
+      - name: Validate guided menu branches
+        shell: pwsh
+        run: |
+          $launcher = Get-Content tools/TicketReady/RUN-TicketReady-Guided.cmd -Raw
+          foreach ($item in @('5 goto updates','4 goto network','3 goto storage','2 goto slowpc',':general',':run')) {
+            if (-not $launcher.Contains($item)) { throw "Missing guided menu branch: $item" }
+          }
+          if ($launcher -match '(?m)^if errorlevel [2-5] set .*&goto') {
+            throw 'Guided menu uses an unconditional goto chain'
+          }
+          if (-not $launcher.Contains('TicketReady.ps1" -Issue "%ISSUE%"')) {
+            throw 'Guided menu does not pass selected issue to PowerShell'
+          }
+
       - name: Assemble distributable ZIP and hash
         shell: pwsh
         run: |
@@ -96,14 +110,14 @@ jobs:
           Copy-Item LICENSE staging/TicketReady/LICENSE.txt
           Copy-Item (Get-ChildItem demo/*.html | Select-Object -First 1).FullName staging/TicketReady/SAMPLE-REPORT.html
           if (-not (Test-Path staging/TicketReady/RUN-TicketReady-Guided.cmd)) { throw 'Guided launcher missing' }
-          Compress-Archive -Path staging/TicketReady -DestinationPath dist/TicketReady-v0.2.1.zip -Force
-          $hash = (Get-FileHash dist/TicketReady-v0.2.1.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  TicketReady-v0.2.1.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+          Compress-Archive -Path staging/TicketReady -DestinationPath dist/TicketReady-v0.2.2.zip -Force
+          $hash = (Get-FileHash dist/TicketReady-v0.2.2.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  TicketReady-v0.2.2.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
 
       - name: Upload portable package as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TicketReady-Windows-v0.2.1
+          name: TicketReady-Windows-v0.2.2
           path: dist/
           if-no-files-found: error
 
@@ -113,11 +127,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          $tag = 'ticketready-v0.2.1'
+          $tag = 'ticketready-v0.2.2'
           gh release view $tag --json url 2>$null | Out-Null
           if ($LASTEXITCODE -eq 0) {
             Write-Host "Release already exists; not overwriting its assets."
           } else {
-            gh release create $tag dist/TicketReady-v0.2.1.zip dist/SHA256SUMS.txt --target $env:GITHUB_SHA --title "TicketReady v0.2.1 - portable Windows support report" --notes "TicketReady v0.2 adds guided troubleshooting, before-and-after comparisons and stronger privacy defaults. Offline, read-only Windows support report with HTML/JSON export. No telemetry, installation, cloud upload, or administrator elevation. Review local reports before sharing."
+            gh release create $tag dist/TicketReady-v0.2.2.zip dist/SHA256SUMS.txt --target $env:GITHUB_SHA --title "TicketReady v0.2.2 - portable Windows support report" --notes "TicketReady v0.2 adds guided troubleshooting, before-and-after comparisons and stronger privacy defaults. Offline, read-only Windows support report with HTML/JSON export. No telemetry, installation, cloud upload, or administrator elevation. Review local reports before sharing."
             if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }
           }
