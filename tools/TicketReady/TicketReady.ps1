@@ -1,4 +1,4 @@
-# TicketReady v0.2.0 - (c) David Schunk, MIT license
+# TicketReady v0.2.1 - (c) David Schunk, MIT license
 # Offline, read-only, privacy-conscious Windows support snapshot.
 [CmdletBinding()]
 param(
@@ -115,7 +115,8 @@ foreach ($disk in $disks) {
     [void]$checks.Add([pscustomobject]@{Name=('Disk '+$disk.Drive);Finding=$flag;Meaning=('{0}% free; capacity only, not physical disk health.' -f $disk.FreePercent)})
 }
 if ($disks.Count -eq 0) { [void]$checks.Add([pscustomobject]@{Name='Storage';Finding='Unknown';Meaning='Fixed-drive metrics unavailable.'}) }
-[void]$checks.Add([pscustomobject]@{Name='Pending reboot';Finding=$reboot;Meaning='Two standard registry markers, not an exhaustive check.'})
+$rebootFinding = if ($reboot -eq 'Yes') { 'Review' } else { $reboot }
+[void]$checks.Add([pscustomobject]@{Name='Pending reboot';Finding=$rebootFinding;Meaning='Two standard registry markers, not an exhaustive check.'})
 [void]$checks.Add([pscustomobject]@{Name='System errors (24h)';Finding=$errors;Meaning='Critical and error events (capped at 200+); count alone is not a diagnosis.'})
 $networkText=if($null -eq $network){'Unknown'}else{[string]$network}
 [void]$checks.Add([pscustomobject]@{Name='Adapters with link up';Finding=$networkText;Meaning='Link status only; no internet connectivity test.'})
@@ -202,7 +203,7 @@ $guideMap = @{
 $nextSteps = @($guideMap[$Issue])
 
 $report=[pscustomobject]@{
-    Product='TicketReady';Version='0.2.0';CollectedAt=$now.ToString('o')
+    Product='TicketReady';Version='0.2.1';CollectedAt=$now.ToString('o')
     Demo=[bool]$Demo;IssueType=$Issue;IncludesDeviceModel=[bool]$IncludeDeviceModel
     BaselineCompared=$baselineUsed;ReviewCount=$reviewCount;UnknownCount=$unknownCount
     Changes=@($changes.ToArray());NextSteps=@($nextSteps)
@@ -273,7 +274,7 @@ $html=@"
 :root{color-scheme:light;--ink:#15263d;--muted:#637188;--border:#dfe7f0}*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:var(--ink);font:15px/1.55 Segoe UI,Arial,sans-serif}main{max-width:1040px;margin:auto;padding:35px 20px 55px}h1{font-size:clamp(30px,5vw,54px);letter-spacing:-.04em;line-height:1.13;margin:10px 0}h2{font-size:21px}p{color:var(--muted)}.eyebrow{font-size:12px;color:#2768a6;text-transform:uppercase;font-weight:800;letter-spacing:.1em}.lede{font-size:18px;max-width:700px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:25px 0}.card,section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:22px}.card small{display:block;color:var(--muted);font-weight:bold;text-transform:uppercase}.card strong{display:block;font-size:22px;margin:10px 0;overflow-wrap:anywhere;line-height:1.2}.card span{color:var(--muted);font-size:13px}section{margin:16px 0;overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left}td,th{padding:12px 9px;border-bottom:1px solid var(--border);vertical-align:top}tr:last-child td,tr:last-child th{border:0}th{font-weight:650}.pill,.warn{border-radius:6px;padding:4px 10px;font-size:12px;background:#e6f0fe;color:#204d80}.warn{background:#fff1d8;color:#805000}.privacy{background:#eaf2ff;padding:17px 20px;border-radius:10px;color:#24446d}.demo{display:inline-block;background:#ffe4b1;padding:8px 14px;border-radius:8px;font-weight:800}footer{margin-top:24px;color:var(--muted);font-size:13px}.summary{margin:16px 0;padding:16px 20px;border-radius:12px;background:#eaf2ff;color:#16466b;display:flex;gap:15px;flex-wrap:wrap}.summary span{font-size:13px}li{margin:8px 0}@media print{body{background:white}main{padding:0}.card,section{break-inside:avoid}}@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.cards{grid-template-columns:1fr}main{padding:18px 12px}section{padding:14px}}
 </style></head><body><main>
 $demoBanner
-<div class="eyebrow">TicketReady v0.2.0 · Local first-response report</div><h1>Know what to check.<br>Before you fix.</h1>
+<div class="eyebrow">TicketReady v0.2.1 · Local first-response report</div><h1>Know what to check.<br>Before you fix.</h1>
 <p class="lede">An offline, read-only support summary. Findings are triage hints, not a diagnosis.</p><p>Collected $collected · $hardwareHtml · This report was generated only on the local computer.</p>
 <div class="cards">$cards</div>
 <div class="summary"><strong>$reviewText</strong><span>$unknownText · Issue: $issueSafe</span></div>
