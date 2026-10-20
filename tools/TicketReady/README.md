@@ -1,4 +1,4 @@
-# TicketReady v0.2.1
+# TicketReady v0.2.2
 
 **Know what to check. Before you fix.**
 
@@ -9,7 +9,7 @@ TicketReady is an **offline, read-only, privacy-conscious Windows support report
 
 ## Download and run
 
-**[Download TicketReady v0.2.1 ZIP from GitHub Releases](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.2.1)**
+**[Download TicketReady v0.2.2 ZIP from GitHub Releases](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.2.2)**
 
 1. Download and extract the ZIP.
 2. Inspect the source if required by your organization's security policy.
