@@ -91,17 +91,19 @@ jobs:
           New-Item -ItemType Directory -Force dist, staging/TicketReady | Out-Null
           Copy-Item tools/TicketReady/TicketReady.ps1 staging/TicketReady/
           Copy-Item tools/TicketReady/RUN-TicketReady.cmd staging/TicketReady/
+          Copy-Item tools/TicketReady/RUN-TicketReady-Guided.cmd staging/TicketReady/
           Copy-Item tools/TicketReady/README.md staging/TicketReady/
           Copy-Item LICENSE staging/TicketReady/LICENSE.txt
           Copy-Item (Get-ChildItem demo/*.html | Select-Object -First 1).FullName staging/TicketReady/SAMPLE-REPORT.html
-          Compress-Archive -Path staging/TicketReady -DestinationPath dist/TicketReady-v0.2.0.zip -Force
-          $hash = (Get-FileHash dist/TicketReady-v0.2.0.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  TicketReady-v0.2.0.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+          if (-not (Test-Path staging/TicketReady/RUN-TicketReady-Guided.cmd)) { throw 'Guided launcher missing' }
+          Compress-Archive -Path staging/TicketReady -DestinationPath dist/TicketReady-v0.2.1.zip -Force
+          $hash = (Get-FileHash dist/TicketReady-v0.2.1.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  TicketReady-v0.2.1.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
 
       - name: Upload portable package as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TicketReady-Windows-v0.2.0
+          name: TicketReady-Windows-v0.2.1
           path: dist/
           if-no-files-found: error
 
@@ -111,11 +113,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          $tag = 'ticketready-v0.2.0'
+          $tag = 'ticketready-v0.2.1'
           gh release view $tag --json url 2>$null | Out-Null
           if ($LASTEXITCODE -eq 0) {
             Write-Host "Release already exists; not overwriting its assets."
           } else {
-            gh release create $tag dist/TicketReady-v0.2.0.zip dist/SHA256SUMS.txt --target $env:GITHUB_SHA --title "TicketReady v0.2.0 - portable Windows support report" --notes "TicketReady v0.2 adds guided troubleshooting, before-and-after comparisons and stronger privacy defaults. Offline, read-only Windows support report with HTML/JSON export. No telemetry, installation, cloud upload, or administrator elevation. Review local reports before sharing."
+            gh release create $tag dist/TicketReady-v0.2.1.zip dist/SHA256SUMS.txt --target $env:GITHUB_SHA --title "TicketReady v0.2.1 - portable Windows support report" --notes "TicketReady v0.2 adds guided troubleshooting, before-and-after comparisons and stronger privacy defaults. Offline, read-only Windows support report with HTML/JSON export. No telemetry, installation, cloud upload, or administrator elevation. Review local reports before sharing."
             if ($LASTEXITCODE -ne 0) { throw 'GitHub Release publication failed' }
           }
