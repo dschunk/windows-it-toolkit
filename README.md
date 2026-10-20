@@ -17,6 +17,12 @@ The goal is simple: turn common operational questions into safe, inspectable Pow
 
 > **Collect first. Change second. Document always.**
 
+## TicketReady — free one-click Windows support report
+
+**[Download TicketReady v0.1.0](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.1.0)** · [What it checks & how to run it](tools/TicketReady/README.md) · [View the source](tools/TicketReady/TicketReady.ps1)
+
+TicketReady is a separate portable tool built for anyone who needs a Windows troubleshooting starting point, not just PowerShell engineers. Extract the ZIP and double-click `RUN-TicketReady.cmd` to produce a local, shareable HTML/JSON diagnostic summary. No installer, administrator privileges, persistent changes, or outgoing network requests. Review reports for private details before sharing. This complements the deeper SchunkOps PowerShell module.
+
 ## Companion troubleshooting guide
 
 [Windows DNS dynamic registration and stale host records](https://everydayittips.com/guides/windows-dns-dynamic-registration-troubleshooting/) explains how to correlate authoritative DNS answers, DHCP lease data, client registration settings, and AD-integrated record ownership before making a change. Pair it with the read-only network and DNS diagnostic commands in SchunkOps.
