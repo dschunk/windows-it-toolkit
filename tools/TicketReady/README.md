@@ -1,4 +1,4 @@
-# TicketReady v0.1.0
+# TicketReady v0.2.1
 
 **Know what to check. Before you fix.**
 
@@ -9,15 +9,15 @@ TicketReady is an **offline, read-only, privacy-conscious Windows support report
 
 ## Download and run
 
-**[Download TicketReady v0.1.0 ZIP from GitHub Releases](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.1.0)**
+**[Download TicketReady v0.2.1 ZIP from GitHub Releases](https://github.com/dschunk/windows-it-toolkit/releases/tag/ticketready-v0.2.1)**
 
 1. Download and extract the ZIP.
 2. Inspect the source if required by your organization's security policy.
-3. Double-click **RUN-TicketReady.cmd**.
+3. Double-click **RUN-TicketReady.cmd** for a general report, or **RUN-TicketReady-Guided.cmd** to choose your problem type.
 4. The HTML report opens in your browser. The HTML and JSON reports are saved in **Documents > TicketReady Reports**.
 5. **Review both files before sharing** with support or a public forum.
 
-The launcher uses an execution-policy exception limited to its PowerShell process because downloaded scripts may be unsigned. It does not permanently change execution policy, but do not circumvent corporate script restrictions. If enterprise policy prevents running it, ask IT for an approved method.
+The launchers use an execution-policy exception limited to their PowerShell process because downloaded scripts may be unsigned. It does not permanently change execution policy, but do not circumvent corporate script restrictions. If enterprise policy prevents running it, ask IT for an approved method.
 
 You can also run the script directly from an existing trusted PowerShell session:
 
@@ -25,12 +25,23 @@ You can also run the script directly from an existing trusted PowerShell session
 .\TicketReady.ps1 -NoBrowser -OutputDirectory "$HOME\Desktop\Support"
 ```
 
+## New in v0.2
+
+TicketReady now does more than collect numbers:
+
+- **Guided next steps:** Choose General, SlowPC, Storage, Network or Updates and get a short, context-specific investigation checklist.
+- **Snapshot comparisons:** Compare two locally saved TicketReady JSON reports to see before-and-after disk capacity, memory usage and reboot-state indicators.
+- **Privacy by default:** Manufacturer and model are hidden unless you explicitly run with `-IncludeDeviceModel`. Process names remain opt-in.
+- **Triage indicators:** A count of Review signals and Unknown checks, rather than an unsupported overall health score.
+- **Print-friendly HTML:** Works offline, without scripts or external libraries.
+- **Two launchers:** One-click basic report and an optional guided launcher.
+
 ### What it checks
 
 | Area | Observations |
 |---|---|
 | Windows | OS name, version, uptime |
-| Hardware | Manufacturer, model, logical CPU count |
+| Hardware | Logical CPU count (manufacturer/model only with explicit opt-in) |
 | Memory | Point-in-time used percentage |
 | Disk | Capacity and free-space percentage per fixed volume |
 | Reboot | Two standard reboot-required registry locations |
@@ -51,15 +62,24 @@ You can also run the script directly from an existing trusted PowerShell session
 # Include the five largest processes (may reveal identifying information).
 .\TicketReady.ps1 -IncludeProcesses
 
+# Choose a situation for relevant next-step guidance.
+.\TicketReady.ps1 -Issue SlowPC
+
+# Compare a previous report (local file, never uploaded).
+.\TicketReady.ps1 -BaselinePath "C:\Support\TicketReady-previous.json" -NoBrowser
+
+# Include manufacturer/model explicitly.
+.\TicketReady.ps1 -IncludeDeviceModel
+
 # Generate fully fictional demo data, without reading Windows system details.
 .\TicketReady.ps1 -Demo -NoBrowser -OutputDirectory ".\Sample"
 ```
 
 ## Privacy and security
 
-Default reports omit the computer name, user name, serial number, IP and MAC addresses, wireless network names, event messages, process command lines, files, browser history, and application credentials. The script makes **no outgoing requests** and does not automatically upload reports. JSON and HTML contain the same minimized data.
+Default reports omit the computer name, user name, serial number, manufacturer/model, IP and MAC addresses, wireless network names, event messages, process command lines, files, browser history, and application credentials. The script makes **no outgoing requests** and does not automatically upload reports. JSON and HTML contain the same minimized data.
 
-**Caution:** Device model and drive labels can still expose context. The optional process names may contain personally or organizationally sensitive text. Always review reports before forwarding or posting them.
+**Caution:** Drive letters and report timestamps can still expose context. Manufacturer/model and process names are opt-in and may be sensitive. Always review reports before forwarding or posting them.
 
 TicketReady only reads system state. It does **not** repair Windows, run a speed test, evaluate SMART drive health, scan for malware, or interpret raw Event Log messages. Low free space and high snapshot memory usage are human review hints, not diagnoses. Unknown metrics should be treated as unverified.
 
@@ -69,7 +89,7 @@ Ask a user to send the HTML report after checking it for private details. Use th
 
 ## Packaging
 
-A Windows GitHub Actions workflow checks script parsing, generates a fictional sample report, runs a Windows smoke test, and builds the ZIP. The first release includes the tool, launcher, README, MIT license and sample HTML report; a SHA-256 checksum file accompanies it. Check the release page for workflow status before distribution.
+A Windows GitHub Actions workflow checks script parsing, generates a fictional sample report, runs a Windows smoke test, and builds the ZIP. Each release includes the tool, launcher, README, MIT license and sample HTML report; a SHA-256 checksum file accompanies it. Check the release page for workflow status before distribution.
 
 ## Contributing
 
@@ -78,3 +98,9 @@ Submit issues and improvements in the [Windows IT Toolkit issue tracker](https:/
 Independently maintained by [David Schunk](https://www.davidschunk.com/). MIT licensed via the [parent project](../../LICENSE). Not endorsed by or associated with any employer.
 
 **Compatibility:** Intended for Windows 10/11 and supported Windows Server versions with Windows PowerShell 5.1. Not comprehensively tested across every Windows build or organizational policy.
+
+## Interpreting comparisons
+
+`-BaselinePath` reads a previously generated TicketReady JSON report from disk. Its contents are not sent to a server. The tool accepts only TicketReady-shaped JSON with a 1 MB input size cap. It compares available metrics by drive letter; it cannot determine why capacity or memory usage changed. A two-point comparison under different workloads should not be described as a trend or proof of improvement.
+
+**Suggested workflow:** capture a report before troubleshooting, save the JSON, repeat after an approved change, and compare with `-BaselinePath`. Keep both reports in an appropriately secured ticket or support folder.
