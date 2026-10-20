@@ -17,6 +17,10 @@ The goal is simple: turn common operational questions into safe, inspectable Pow
 
 > **Collect first. Change second. Document always.**
 
+## Companion troubleshooting guide
+
+[Windows DNS dynamic registration and stale host records](https://everydayittips.com/guides/windows-dns-dynamic-registration-troubleshooting/) explains how to correlate authoritative DNS answers, DHCP lease data, client registration settings, and AD-integrated record ownership before making a change. Pair it with the read-only network and DNS diagnostic commands in SchunkOps.
+
 ## Start here by role
 
 | You are... | Start with... | Why |
