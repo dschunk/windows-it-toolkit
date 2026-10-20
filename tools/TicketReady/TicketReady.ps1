@@ -234,6 +234,25 @@ if (-not $drives) {$drives='<tr><td colspan="4">Unavailable</td></tr>'}
 $notes=''
 foreach($note in $script:Notes) {$notes+=('<li>{0}</li>' -f (Escape-Html $note))}
 if (-not $notes) {$notes='<li>No collection limitations reported.</li>'}
+$stepsHtml=''
+$stepNumber=0
+foreach($step in $nextSteps){
+    $stepNumber++
+    $stepsHtml+=('<li><strong>{0}.</strong> {1}</li>' -f $stepNumber,(Escape-Html $step))
+}
+$compareHtml=''
+if($baselineUsed){
+    $compareRows=''
+    foreach($item in $changes){
+        $compareRows+=('<tr><th>{0}</th><td>{1}</td><td>{2}</td><td>{3}</td></tr>' -f
+            (Escape-Html $item.Metric),(Escape-Html $item.Before),(Escape-Html $item.After),(Escape-Html $item.Note))
+    }
+    if(-not $compareRows){$compareRows='<tr><td colspan="4">No comparable metrics.</td></tr>'}
+    $compareHtml='<section><h2>Before and after</h2><p>Two snapshots are not a trend; compare under similar workloads.</p><table><thead><tr><th>Metric</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>'+$compareRows+'</tbody></table></section>'
+}
+$reviewText=if($reviewCount -eq 1){'1 review signal'}else{[string]$reviewCount+' review signals'}
+$unknownText=if($unknownCount -eq 1){'1 unverified check'}else{[string]$unknownCount+' unverified checks'}
+$issueSafe=Escape-Html $Issue
 $procs=''
 if ($IncludeProcesses) {
     $procRows=''
@@ -251,12 +270,16 @@ $batteryHtml=Escape-Html $batteryText
 $html=@"
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>TicketReady — Windows support report</title>
 <style>
-:root{color-scheme:light;--ink:#15263d;--muted:#637188;--border:#dfe7f0}*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:var(--ink);font:15px/1.55 Segoe UI,Arial,sans-serif}main{max-width:1040px;margin:auto;padding:35px 20px 55px}h1{font-size:clamp(30px,5vw,54px);letter-spacing:-.04em;line-height:1.13;margin:10px 0}h2{font-size:21px}p{color:var(--muted)}.eyebrow{font-size:12px;color:#2768a6;text-transform:uppercase;font-weight:800;letter-spacing:.1em}.lede{font-size:18px;max-width:700px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:25px 0}.card,section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:22px}.card small{display:block;color:var(--muted);font-weight:bold;text-transform:uppercase}.card strong{display:block;font-size:22px;margin:10px 0;overflow-wrap:anywhere;line-height:1.2}.card span{color:var(--muted);font-size:13px}section{margin:16px 0;overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left}td,th{padding:12px 9px;border-bottom:1px solid var(--border);vertical-align:top}tr:last-child td,tr:last-child th{border:0}th{font-weight:650}.pill,.warn{border-radius:6px;padding:4px 10px;font-size:12px;background:#e6f0fe;color:#204d80}.warn{background:#fff1d8;color:#805000}.privacy{background:#eaf2ff;padding:17px 20px;border-radius:10px;color:#24446d}.demo{display:inline-block;background:#ffe4b1;padding:8px 14px;border-radius:8px;font-weight:800}footer{margin-top:24px;color:var(--muted);font-size:13px}@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.cards{grid-template-columns:1fr}main{padding:18px 12px}section{padding:14px}}
+:root{color-scheme:light;--ink:#15263d;--muted:#637188;--border:#dfe7f0}*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:var(--ink);font:15px/1.55 Segoe UI,Arial,sans-serif}main{max-width:1040px;margin:auto;padding:35px 20px 55px}h1{font-size:clamp(30px,5vw,54px);letter-spacing:-.04em;line-height:1.13;margin:10px 0}h2{font-size:21px}p{color:var(--muted)}.eyebrow{font-size:12px;color:#2768a6;text-transform:uppercase;font-weight:800;letter-spacing:.1em}.lede{font-size:18px;max-width:700px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:25px 0}.card,section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:22px}.card small{display:block;color:var(--muted);font-weight:bold;text-transform:uppercase}.card strong{display:block;font-size:22px;margin:10px 0;overflow-wrap:anywhere;line-height:1.2}.card span{color:var(--muted);font-size:13px}section{margin:16px 0;overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left}td,th{padding:12px 9px;border-bottom:1px solid var(--border);vertical-align:top}tr:last-child td,tr:last-child th{border:0}th{font-weight:650}.pill,.warn{border-radius:6px;padding:4px 10px;font-size:12px;background:#e6f0fe;color:#204d80}.warn{background:#fff1d8;color:#805000}.privacy{background:#eaf2ff;padding:17px 20px;border-radius:10px;color:#24446d}.demo{display:inline-block;background:#ffe4b1;padding:8px 14px;border-radius:8px;font-weight:800}footer{margin-top:24px;color:var(--muted);font-size:13px}.summary{margin:16px 0;padding:16px 20px;border-radius:12px;background:#eaf2ff;color:#16466b;display:flex;gap:15px;flex-wrap:wrap}.summary span{font-size:13px}li{margin:8px 0}@media print{body{background:white}main{padding:0}.card,section{break-inside:avoid}}@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:430px){.cards{grid-template-columns:1fr}main{padding:18px 12px}section{padding:14px}}
 </style></head><body><main>
 $demoBanner
 <div class="eyebrow">TicketReady v0.2.0 · Local first-response report</div><h1>Know what to check.<br>Before you fix.</h1>
 <p class="lede">An offline, read-only support summary. Findings are triage hints, not a diagnosis.</p><p>Collected $collected · $hardwareHtml · This report was generated only on the local computer.</p>
-<div class="cards">$cards</div><section><h2>What to review</h2><p>Unavailable values remain unknown. A review flag is not proof of a fault.</p><table><thead><tr><th>Check</th><th>Result</th><th>Interpretation</th></tr></thead><tbody>$rows</tbody></table></section>
+<div class="cards">$cards</div>
+<div class="summary"><strong>$reviewText</strong><span>$unknownText · Issue: $issueSafe</span></div>
+<section><h2>Suggested next steps</h2><p>Read-only guidance, not a diagnosis or an automatic repair.</p><ol>$stepsHtml</ol></section>
+$compareHtml
+<section><h2>What to review</h2><p>Unavailable values remain unknown. A review flag is not proof of a fault.</p><table><thead><tr><th>Check</th><th>Result</th><th>Interpretation</th></tr></thead><tbody>$rows</tbody></table></section>
 <section><h2>Storage capacity</h2><table><thead><tr><th>Drive</th><th>Total</th><th>Free</th><th>Free %</th></tr></thead><tbody>$drives</tbody></table></section>
 <section><h2>Other observations</h2><p><strong>Battery:</strong> $batteryHtml</p><p><strong>Collection notes:</strong></p><ul>$notes</ul></section>
 $procs
