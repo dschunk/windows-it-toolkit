@@ -119,9 +119,93 @@ if ($disks.Count -eq 0) { [void]$checks.Add([pscustomobject]@{Name='Storage';Fin
 [void]$checks.Add([pscustomobject]@{Name='System errors (24h)';Finding=$errors;Meaning='Critical and error events (capped at 200+); count alone is not a diagnosis.'})
 $networkText=if($null -eq $network){'Unknown'}else{[string]$network}
 [void]$checks.Add([pscustomobject]@{Name='Adapters with link up';Finding=$networkText;Meaning='Link status only; no internet connectivity test.'})
+
+# These observations are a support triage starting point, not a health score.
+$reviewCount = @($checks | Where-Object { $_.Finding -eq 'Review' }).Count
+$unknownCount = @($checks | Where-Object { $_.Finding -eq 'Unknown' }).Count
+$changes = New-Object 'System.Collections.Generic.List[object]'
+$baselineUsed = $false
+if (-not [string]::IsNullOrWhiteSpace($BaselinePath)) {
+    if (-not (Test-Path -LiteralPath $BaselinePath -PathType Leaf)) {
+        throw 'BaselinePath must point to an existing TicketReady JSON report.'
+    }
+    if ((Get-Item -LiteralPath $BaselinePath).Length -gt 1048576) {
+        throw 'Baseline report exceeds the 1 MB limit.'
+    }
+    try {
+        $baseline = Get-Content -LiteralPath $BaselinePath -Raw -ErrorAction Stop |
+            ConvertFrom-Json -ErrorAction Stop
+        if ($baseline.Product -ne 'TicketReady' -or $null -eq $baseline.Windows -or
+            $null -eq $baseline.Disks) { throw 'Not a TicketReady report.' }
+        $baselineUsed = $true
+        if ($null -ne $baseline.Windows.MemoryUsedPercent -and $null -ne $mem) {
+            $delta = [math]::Round([double]$mem - [double]$baseline.Windows.MemoryUsedPercent,0)
+            $note = if ($delta -gt 0) { "Higher by $delta percentage points" }
+                    elseif ($delta -lt 0) { 'Lower by ' + [math]::Abs($delta) + ' percentage points' }
+                    else { 'No measured change' }
+            [void]$changes.Add([pscustomobject]@{
+                Metric='Memory used';Before=([string]$baseline.Windows.MemoryUsedPercent+'%')
+                After=([string]$mem+'%');Note=$note
+            })
+        }
+        foreach ($disk in $disks) {
+            $matches = @($baseline.Disks | Where-Object { $_.Drive -eq $disk.Drive } |
+                Select-Object -First 1)
+            if ($matches.Count -eq 0 -or $null -eq $matches[0].FreeGB) { continue }
+            $delta = [math]::Round([double]$disk.FreeGB - [double]$matches[0].FreeGB,1)
+            $note = if ($delta -lt 0) { [string][math]::Abs($delta) + ' GB less free' }
+                    elseif ($delta -gt 0) { [string]$delta + ' GB more free' }
+                    else { 'No measured change' }
+            [void]$changes.Add([pscustomobject]@{
+                Metric=('Disk '+$disk.Drive);Before=([string]$matches[0].FreeGB+' GB')
+                After=([string]$disk.FreeGB+' GB');Note=$note
+            })
+        }
+        if ($null -ne $baseline.PendingReboot -and
+            $baseline.PendingReboot -ne $reboot) {
+            [void]$changes.Add([pscustomobject]@{
+                Metric='Pending reboot';Before=[string]$baseline.PendingReboot
+                After=$reboot;Note='Indicator changed between reports'
+            })
+        }
+    } catch {
+        throw 'Invalid TicketReady baseline. Choose a valid exported TicketReady JSON file.'
+    }
+}
+$guideMap = @{
+ General=@(
+    'Write down the exact symptom, onset and any reproducible steps.',
+    'Review findings and collection limits; an observation is not proof of a cause.',
+    'Record recent changes and send only the reviewed report to support.'
+ )
+ SlowPC=@(
+    'Identify whether slowdown happens at sign-in, startup or one application.',
+    'Compare current memory and free space to an earlier snapshot under similar conditions.',
+    'Use Task Manager and Resource Monitor with IT to correlate behavior before changes.'
+ )
+ Storage=@(
+    'Identify which drive is low. Do not delete unknown files.',
+    'Compare free space with an earlier TicketReady report to see if capacity is changing.',
+    'Confirm backups and retention rules before cleanup or expansion.'
+ )
+ Network=@(
+    'Identify whether all destinations fail or only one application or site.',
+    'Note whether Wi-Fi, Ethernet or VPN is affected; do not publish private addresses.',
+    'Link-up is not connectivity: ask IT to check DNS, gateway and service reachability.'
+ )
+ Updates=@(
+    'Find the exact error code or pending restart in Windows Update.',
+    'Record update identifiers and failure times for your support team.',
+    'Use approved patch-management processes before retries or restarts.'
+ )
+}
+$nextSteps = @($guideMap[$Issue])
+
 $report=[pscustomobject]@{
     Product='TicketReady';Version='0.2.0';CollectedAt=$now.ToString('o')
-    Demo=[bool]$Demo
+    Demo=[bool]$Demo;IssueType=$Issue;IncludesDeviceModel=[bool]$IncludeDeviceModel
+    BaselineCompared=$baselineUsed;ReviewCount=$reviewCount;UnknownCount=$unknownCount
+    Changes=@($changes.ToArray());NextSteps=@($nextSteps)
     Privacy='No host/user, serial, IP/MAC, SSID, event messages or command lines; model and process names require opt-in.'
     Windows=[pscustomobject]@{Name=$osName;Version=$osVersion;Hardware=$hardware;LogicalProcessors=$threads;Uptime=$uptime;MemoryUsedPercent=$mem}
     Disks=@($disks);BatteryPercent=$batteryPercent;NetworkAdaptersUp=$network
